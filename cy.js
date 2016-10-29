@@ -13,16 +13,21 @@ var cy = cytoscape({
     {
       selector: 'node',
       style: {
+        'shape': 'hexagon',
         'content': 'data(id)',
-        "font-size":"12px",
+        "font-size":"20px",
         "text-valign":"center",
         "text-halign":"center",
         "background-color":"#000",
         "text-outline-color":"#000",
         "text-outline-width":"1px",
-        "color":"#fff",
-        "overlay-padding":"6px",
-        "z-index":"10"
+        "color":"orange",
+        "overlay-padding":"8px",
+        "z-index":"10",
+        "width": "110px",
+        "height": "100px",
+        "border-width": "2px",
+        "border-color": "orange"
       }
     },
 
@@ -33,7 +38,7 @@ var cy = cytoscape({
         "label": "data(id)",
         'edge-text-rotation': 'autorotate',
         'width': 2,
-        'line-color': '#000',
+        'line-color': '#fff',
         'target-arrow-color': '#000',
         // 'target-arrow-shape': 'triangle',
         // "curve-style":"haystack",
@@ -86,6 +91,7 @@ var set_delay = 1000;
 var callout = function () {
         $.ajax({
           dataType: "json",
+          // url: "init.json",
           url: "http://localhost:8888/0/",
           method: "GET",
           // crossDomain: true,
@@ -98,25 +104,25 @@ var callout = function () {
             // update the page
             update(response);
         })
-        .always(function () {
-            setTimeout(callout, set_delay);
-        });
+        // .always(function () {
+        //     setTimeout(callout, set_delay);
+        // });
     };
 
 // layout.run()
 // //clearInterval(id);
-$.ajax({
-  dataType: "json",
-  url: "http://localhost:8888",
-  method: "POST",
-  // crossDomain: true,
-  // json: {
-  //   format: "cy.update"
-  // }
-})
-.done(function (response) {
-    console.log(response);
-})
+// $.ajax({
+//   dataType: "json",
+//   url: "http://localhost:8888",
+//   method: "POST",
+//   // crossDomain: true,
+//   // json: {
+//   //   format: "cy.update"
+//   // }
+// })
+// .done(function (response) {
+//     console.log(response);
+// })
 
 // // initial call
 callout();

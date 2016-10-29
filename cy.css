@@ -1,24 +1,37 @@
+* {
+  font-family: sans-serif;
+}
+
 body {
   width: 31cm;
+  background: black;
 }
+
 .cy {
-  display: inline-block;
-  border: solid 1pt;
-  width: 25cm;
-  height: 6cm;
-  padding: 3pt;
-  margin: 1pt;
+  border: solid 1pt #2b2a2a;
+  width: 80vh;
+  height: 80vh;
+  padding: 0px;
+  margin: 10px 20px;
+  background: black;
+  float:left;
 }
 
 .sidebar {
-  display: inline-block;
-  width: 5cm;
-  height: 6cm;
-  border: solid 1pt;
-  padding: 3pt;
-  margin: 1pt;
+  height:80vh;
+  width:40vh;
+  float:left;
+  margin: 10px 0px;  
+  border: solid 1pt #2b2a2a;
+  color: lightgrey;
 }
 
 h1 {
-  color: green;
+  color: white;
+  letter-spacing: 0.04em;
+  font-size:14pt;
+  margin-left:20px;
+  padding-bottom:15px;
+  margin-bottom:10px;
+  border-bottom: 1px solid lightgrey;
 }
