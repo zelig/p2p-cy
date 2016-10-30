@@ -1,130 +1,123 @@
-$(document).ready(function(){
+var host = "http://192.168.1.3:8888/";
+var interval = 1000;
+var cy;
+var layout_opts = {
+  // circle, animated
+  name: 'circle',
+  fit: true,
+  idealEdgeLength: 100,
+  nodeOverlap: 20,
+  animate: true,
+  animationDuration: 800,
+  animationEasing: 'ease-out-quint'
+}
 
+var initialiseServer = function(){
+  return $.ajax({
+    dataType: "json",
+    url: host,
+    method: "POST",
+  });
+}
 
-var cy = cytoscape({
-  container: $('#cy'), // container to render in
-  // container: document.getElementById('cy'), // container to render in
-
-  layout: {
-    name: "spread"
-  },
-
-  style: [ // the stylesheet for the graph
-    {
-      selector: 'node',
-      style: {
-        'shape': 'hexagon',
-        'content': 'data(id)',
-        "font-size":"20px",
-        "text-valign":"center",
-        "text-halign":"center",
-        "background-color":"#000",
-        "text-outline-color":"#000",
-        "text-outline-width":"1px",
-        "color":"orange",
-        "overlay-padding":"8px",
-        "z-index":"10",
-        "width": "110px",
-        "height": "100px",
-        "border-width": "2px",
-        "border-color": "orange"
-      }
-    },
-
-    {
-      selector: 'edge',
-      style: {
-        "font-size":"4px",
-        "label": "data(id)",
-        'edge-text-rotation': 'autorotate',
-        'width': 2,
-        'line-color': '#fff',
-        'target-arrow-color': '#000',
-        // 'target-arrow-shape': 'triangle',
-        // "curve-style":"haystack",
-        // "haystack-radius":"0.5",
-        // "opacity":"0.4",
-        "overlay-padding":"3px",
-        "z-index":"10"
-      }
-    },
-
-    {
-      selector: '.faded',
-      style: {
-        'opacity': 0.25,
-        'text-opacity': 0
-      }
-    }
-  ]
-});
-
-var params = {
-  'name': 'spread'
-};
-var layout = cy.makeLayout(params);
-// layout.run();
-
-console.log("hey");
-
-var update = function(journal) {
-
-  if (journal.add.length > 0) {
-    console.log(JSON.stringify(journal.add))
-    cy.add(journal.add);
-  };
-  if (journal.remove.length > 0) {
-    console.log(JSON.stringify(journal.remove))
-    cy.remove('#'+journal.remove.join(",#"));
-  };
-  var params = {
-    // 'name': 'grid'
-    'name': 'circle'
-    // 'name': 'spread'
-  };
-  var layout = cy.makeLayout(params);
-  layout.run();
+var getNodes = function(){
+  return $.ajax({
+    dataType: "json",
+    // url: "init.json",
+    url: host+"0/",
+    method: "GET",
+  });
 };
 
+var ajax_error_handler = function(e){
+  console.error(e)
+};
 
-var set_delay = 1000;
-var callout = function () {
-        $.ajax({
-          dataType: "json",
-          // url: "init.json",
-          url: "http://localhost:8888/0/",
-          method: "GET",
-          // crossDomain: true,
-          // json: {
-          //   format: "cy.update"
-          // }
-        })
-        .done(function (response) {
-            console.log(response);
-            // update the page
-            update(response);
-        })
-        // .always(function () {
-        //     setTimeout(callout, set_delay);
-        // });
+var initialiseCy = function(initialNodes){
+  cy = cytoscape({
+    container: $('#cy'), // container to render in
+    motionBlur: true,
+    // container: document.getElementById('cy'), // container to render in
+
+    layout: layout_opts,
+
+    style: [ // the stylesheet for the graph
+      {
+        selector: 'node',
+        style: {
+          'shape': 'hexagon',
+          'content': 'data(id)',
+          "font-size":"20px",
+          "text-valign":"center",
+          "text-halign":"center",
+          "background-color":"#000",
+          "text-outline-color":"#000",
+          "text-outline-width":"1px",
+          "color":"orange",
+          "overlay-padding":"8px",
+          "z-index":"10",
+          "width": "110px",
+          "height": "100px",
+          "border-width": "2px",
+          "border-color": "orange"
+        }
+      },
+
+      {
+        selector: 'edge',
+        style: {
+          "font-size":"4px",
+          "label": "data(id)",
+          'edge-text-rotation': 'autorotate',
+          'width': 2,
+          'line-color': 'white',
+          'target-arrow-color': 'white',
+          'target-arrow-shape': 'triangle',
+          "curve-style":"haystack",
+          "haystack-radius":"0.5",
+          "opacity":"0.4",
+          "overlay-padding":"3px",
+          "z-index":"10"
+        }
+      },
+
+      {
+        selector: '.faded',
+        style: {
+          'opacity': 0.25,
+          'text-opacity': 0
+        }
+      },    
+    ],
+    elements: initialNodes
+  });
+};
+
+var updateCy = function(journal){
+    if (journal.add.length > 0) {
+      console.log("add", JSON.stringify(journal.add.length))
+      cy.add(journal.add);
     };
+  
+    if (journal.remove.length > 0) {
+      console.log("rm", JSON.stringify(journal.remove.length))
+      cy.remove('#'+journal.remove.join(",#"));
+    };
+  
+    var layout = cy.makeLayout(layout_opts);
+    layout.run();
+}
 
-// layout.run()
-// //clearInterval(id);
-// $.ajax({
-//   dataType: "json",
-//   url: "http://localhost:8888",
-//   method: "POST",
-//   // crossDomain: true,
-//   // json: {
-//   //   format: "cy.update"
-//   // }
-// })
-// .done(function (response) {
-//     console.log(response);
-// })
-
-// // initial call
-callout();
-
+$(function(){
+  initialiseServer().then({},function(response){
+    console.log('server intialised');
+    var initialNodes = false;
+    setTimeout(function(){
+      getNodes().then(function(response){
+        initialiseCy(response.add);
+        setInterval(function(){getNodes().then(function(response){updateCy(response);})}, interval);
+      },ajax_error_handler)
+    },1000)
+    
+  },ajax_error_handler)
 });
