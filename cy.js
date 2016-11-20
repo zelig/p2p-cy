@@ -1,5 +1,7 @@
-var host = "http://192.168.1.3:8888/";
-var interval = 1000;
+var host = "http://localhost:8888/";
+// var host = "http://192.168.1.3:8888/";
+var pollInterval = 1000;
+var timeoutInterval = 1000;
 var cy;
 var layout_opts = {
   // circle, animated
@@ -12,10 +14,18 @@ var layout_opts = {
   animationEasing: 'ease-out-quint'
 }
 
-var initialiseServer = function(){
+var initNetwork = function(){
   return $.ajax({
     dataType: "json",
     url: host,
+    method: "POST",
+  });
+}
+
+var initMocker = function(){
+  return $.ajax({
+    dataType: "json",
+    url: host+"0/mockevents/",
     method: "POST",
   });
 }
@@ -30,7 +40,7 @@ var getNodes = function(){
 };
 
 var ajax_error_handler = function(e){
-  console.error(e)
+  console.error("ajax error: "+e)
 };
 
 var initialiseCy = function(initialNodes){
@@ -87,7 +97,7 @@ var initialiseCy = function(initialNodes){
           'opacity': 0.25,
           'text-opacity': 0
         }
-      },    
+      },
     ],
     elements: initialNodes
   });
@@ -98,26 +108,29 @@ var updateCy = function(journal){
       console.log("add", JSON.stringify(journal.add.length))
       cy.add(journal.add);
     };
-  
+
     if (journal.remove.length > 0) {
       console.log("rm", JSON.stringify(journal.remove.length))
       cy.remove('#'+journal.remove.join(",#"));
     };
-  
+
     var layout = cy.makeLayout(layout_opts);
     layout.run();
 }
 
 $(function(){
-  initialiseServer().then({},function(response){
-    console.log('server intialised');
-    var initialNodes = false;
-    setTimeout(function(){
-      getNodes().then(function(response){
-        initialiseCy(response.add);
-        setInterval(function(){getNodes().then(function(response){updateCy(response);})}, interval);
-      },ajax_error_handler)
-    },1000)
-    
+  initNetwork()
+  .then(function(response){
+    initMocker()
+    .then(function(response){
+      console.log('new network simulation started');
+      var initialNodes = false;
+      setTimeout(function(){
+        getNodes().then(function(response){
+          initialiseCy(response.add);
+          setInterval(function(){getNodes().then(function(response){updateCy(response);})}, pollInterval);
+        },ajax_error_handler)
+      },timeoutInterval)
+    },ajax_error_handler)
   },ajax_error_handler)
 });
