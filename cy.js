@@ -121,8 +121,8 @@ var updateCy = function(journal){
 $(function(){
   initNetwork()
   .then(function(response){
-    initMocker()
-    .then(function(response){
+    // initMocker()
+    // .then(function(response){
       console.log('new network simulation started');
       var initialNodes = false;
       setTimeout(function(){
@@ -131,6 +131,6 @@ $(function(){
           setInterval(function(){getNodes().then(function(response){updateCy(response);})}, pollInterval);
         },ajax_error_handler)
       },timeoutInterval)
-    },ajax_error_handler)
+    // },ajax_error_handler)
   },ajax_error_handler)
 });
