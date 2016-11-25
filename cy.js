@@ -4,14 +4,16 @@ var pollInterval = 1000;
 var timeoutInterval = 1000;
 var cy;
 var layout_opts = {
-  // circle, animated
-  name: 'circle',
+  name: 'cola',
   fit: true,
   idealEdgeLength: 100,
   nodeOverlap: 20,
   animate: true,
-  animationDuration: 800,
-  animationEasing: 'ease-out-quint'
+  animationDuration: 12200,
+  // animationEasing: 'ease-out-quint',
+  randomize: false,
+  maxSimulationTime: 10500,
+  nodeSpacing: 30
 }
 
 var initNetwork = function(){
@@ -121,8 +123,8 @@ var updateCy = function(journal){
 $(function(){
   initNetwork()
   .then(function(response){
-    // initMocker()
-    // .then(function(response){
+    initMocker()
+    .then(function(response){
       console.log('new network simulation started');
       var initialNodes = false;
       setTimeout(function(){
@@ -131,6 +133,6 @@ $(function(){
           setInterval(function(){getNodes().then(function(response){updateCy(response);})}, pollInterval);
         },ajax_error_handler)
       },timeoutInterval)
-    // },ajax_error_handler)
+    },ajax_error_handler)
   },ajax_error_handler)
 });
