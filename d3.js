@@ -1,7 +1,7 @@
 class P2Pd3 {
 
   constructor(svg) {
-
+	this.updatecount = 0;
     this.svg = svg;
 
     this.width = svg.attr("width");
@@ -99,14 +99,20 @@ class P2Pd3 {
         .selectAll("line")
         .data(links)
         .enter().append("line")
-        .attr("stroke-width", function(d) { return Math.sqrt(d.value); });
+        .attr("stroke", "#808080")
+        // this seems to increment per link in array, independent of which nodes the link belongs to
+        //.attr("stroke-width", function(d) { return Math.sqrt(d.value); });
+        // ... which doesn't give us useful info, and it renders the first invisible ("0")
+        .attr("stroke-width", "1.0");
     return this.link;
   }
 
   updateVisualisation(newNodes,newLinks,removeNodes,removeLinks) {
-
+	
     var self = this;
-
+	
+	this.updatecount++;
+	
     this.link = this.appendLinks(newLinks);
 
     this.node = this.appendNodes(newNodes);
@@ -161,7 +167,10 @@ class P2Pd3 {
     this.link = this.link.data(this.graphLinks);
 
     // add new links
-    this.link = this.link.enter().append("line").merge(this.link);
+    this.link = this.link.enter().append("line")
+				.attr("stroke", "#808080")
+				.attr("stroke-width", "1.0")
+				.merge(this.link);
     
     return this.link;
   }
@@ -179,21 +188,71 @@ class P2Pd3 {
 
 }
 
-
-
 function generateUID() {
     return ("0000" + (Math.random()*Math.pow(36,4) << 0).toString(36)).slice(-4)
 }
 
-var BACKEND_URL='http://localhost:8888/';
+var BACKEND_URL='http://127.0.0.1:8888';
+
+var networkname = "metaschmeta";
+
+var cursor = 0;
+
+var prereqs = [
+	{method: "POST", url: "/node", payload: null,},
+	{method: "POST", url: "/node", payload: null,},	
+	{method: "POST", url: "/node", payload: null,},	
+	{method: "POST", url: "/node", payload: null,},
+	{method: "POST", url: "/node", payload: null,},	
+	{method: "POST", url: "/node", payload: null,},	
+	{method: "POST", url: "/node", payload: null,},
+	{method: "POST", url: "/node", payload: null,},	
+	{method: "POST", url: "/node", payload: null,},	
+	{method: "POST", url: "/node", payload: null,},	
+	
+	{method: "PUT", url: "/node", payload: {One: 1},},
+	{method: "PUT", url: "/node", payload: {One: 2},},
+	{method: "PUT", url: "/node", payload: {One: 3},},
+	{method: "PUT", url: "/node", payload: {One: 4},},
+	{method: "PUT", url: "/node", payload: {One: 5},},
+	{method: "PUT", url: "/node", payload: {One: 6},},
+	{method: "PUT", url: "/node", payload: {One: 7},},
+	{method: "PUT", url: "/node", payload: {One: 8},},
+	{method: "PUT", url: "/node", payload: {One: 9},},
+	{method: "PUT", url: "/node", payload: {One: 10},},
+	
+	{method: "PUT", url: "/node", payload: {One: 1, Other: 2}},
+	{method: "PUT", url: "/node", payload: {One: 2, Other: 3}},
+	{method: "PUT", url: "/node", payload: {One: 3, Other: 4}},
+	{method: "PUT", url: "/node", payload: {One: 4, Other: 5}},
+	{method: "PUT", url: "/node", payload: {One: 5, Other: 6}},
+	{method: "PUT", url: "/node", payload: {One: 6, Other: 7}},
+	{method: "PUT", url: "/node", payload: {One: 7, Other: 8}},
+	{method: "PUT", url: "/node", payload: {One: 8, Other: 9}},
+	{method: "PUT", url: "/node", payload: {One: 9, Other: 10}},
+	
+	{method: "PUT", url: "/node", payload: {One: 1, Other: 2, AssetType: 1}},
+]
+
+var postreqs = [
+	{method: "PUT", url: "/node", payload: {One: 10, Other: 1}},
+	{method: "PUT", url: "/node", payload: {One: 1, Other: 2, AssetType: 1}},
+}
 
 initializeServer();
 
 function initializeServer(){
-          $.post(BACKEND_URL).then(
+		console.log("we have " + reqs.length + " requests linedup for you in this run");
+          $.post(BACKEND_URL + "/", JSON.stringify({"Id":networkname})).then(
             function(d){
               console.log("Backend POST init ok");
-              initializeMocker();
+              //initializeMocker();
+              //setTimeout(initializeVisualisationWithClass,1000);
+              //setInterval(testPostSequence, 1000);
+              //initializeVisualisation(networkname);
+              //initializeVisualisationWithClass(networkname);
+              testPostSequence(networkname);
+				
             },
             function(e) { 
               console.log("Error sending POST to " + BACKEND_URL); 
@@ -201,6 +260,62 @@ function initializeServer(){
             })
 };
 
+function preSequence(networkname_) {
+	
+	if (cursor == prereqs.length)
+		return false;
+		
+	var effectiveurl = BACKEND_URL + "/" + networkname_ + prereqs[cursor].url + "/";
+	$.ajax({
+		type: prereqs[cursor].method,
+		url: effectiveurl,
+		dataType: "json",
+		mimeType: "application/json",
+		data: JSON.stringify(prereqs[cursor].payload),
+	}).done(function() {
+		cursor++;
+		
+		if (cursor == prereqs.length) {
+			//updateVisualisationWithClass(networkname_, 1, testPostSequence);
+			initializeVisualisationWithClass(networkname);
+			
+		} else {
+			testPostSequence(networkname_);
+		}
+		//updateVisualisationWithClass(networkname_, 0, testPostSequence);
+	});	
+	
+	return true;
+}
+
+function postSequence(networkname_) {
+	if (cursor == postreqs.length)
+		return false;
+		
+	var effectiveurl = BACKEND_URL + "/" + networkname_ + postreqs[cursor].url + "/";
+	$.ajax({
+		type: postreqs[cursor].method,
+		url: effectiveurl,
+		dataType: "json",
+		mimeType: "application/json",
+		data: JSON.stringify(postreqs[cursor].payload),
+	}).done(function() {
+		cursor++;
+		
+		if (cursor == postreqs.length) {
+			//updateVisualisationWithClass(networkname_, 1, testPostSequence);
+			initializeVisualisationWithClass(networkname);
+			
+		} else {
+			testPostSequence(networkname_);
+		}
+		//updateVisualisationWithClass(networkname_, 0, testPostSequence);
+	});	
+	
+	return true;
+}
+
+/*
 function initializeMocker() {
           $.post(BACKEND_URL + '0/mockevents/').then(
             function(d){
@@ -213,9 +328,9 @@ function initializeMocker() {
               console.log(e); 
           })
 };
+*/
 
-
-function initializeVisualisationWithClass(){
+function initializeVisualisationWithClass(networkname_){
 
             console.log("Initializing visualization");
             var self = this;
@@ -224,7 +339,7 @@ function initializeVisualisationWithClass(){
                 = window.visualisation 
                 = new P2Pd3(d3.select("svg"));
 
-            $.get(BACKEND_URL + '0/').then(
+            $.get(BACKEND_URL + '/' + networkname_ + "/").then(
               function(graph){
                 console.log("Received graph data from backend");
                 self.graphNodes = $(graph.add)
@@ -246,17 +361,19 @@ function initializeVisualisationWithClass(){
 
                 self.visualisation.initializeVisualisation(self.graphNodes,self.graphLinks);
 
-                self.visualisationInterval = setInterval(updateVisualisationWithClass,1000);
+                //self.visualisationInterval = setInterval(updateVisualisationWithClass,1000);
+                //setTimeOut(function() {updateVisualisationWithClass(networkname_, 1, testPostSequence)}, 0);
+                //updateVisualisationWithClass(networkname_, 1, testPostSequence)
               },
               function(e){ console.log(e); }
             )
 };
 
 
-function updateVisualisationWithClass(){
+function updateVisualisationWithClass(networkname_, delay, callback){
 
             var self = this;
-            $.get(BACKEND_URL + '0/').then(
+            $.get(BACKEND_URL + '/' + networkname_ + "/").then(
                 function(graph){
                     
                     var newNodes = $(graph.add)
@@ -294,7 +411,9 @@ function updateVisualisationWithClass(){
                     .toArray();
 
                     if(newNodes.length > 0 || newLinks.length > 0 || removeNodes.length > 0 || removeLinks.length > 0 )
-                    self.visualisation.updateVisualisation(newNodes,newLinks,removeNodes,removeLinks);
+						self.visualisation.updateVisualisation(newNodes,newLinks,removeNodes,removeLinks);
+                    
+                    setTimeout(function() {callback(networkname_)}, delay);
                 },
                 function(e){ console.log(e); }
             )
