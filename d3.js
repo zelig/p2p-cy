@@ -237,12 +237,12 @@ var prereqs = [
 var postreqs = [
 	{method: "PUT", url: "/node", payload: {One: 10, Other: 1}},
 	{method: "PUT", url: "/node", payload: {One: 1, Other: 2, AssetType: 1}},
-}
+]
 
 initializeServer();
 
 function initializeServer(){
-		console.log("we have " + reqs.length + " requests linedup for you in this run");
+		console.log("we have a snapshot of " + prereqs.length + " requests and animation of " + postreqs.length + " requests linedup for you in this run");
           $.post(BACKEND_URL + "/", JSON.stringify({"Id":networkname})).then(
             function(d){
               console.log("Backend POST init ok");
@@ -251,7 +251,7 @@ function initializeServer(){
               //setInterval(testPostSequence, 1000);
               //initializeVisualisation(networkname);
               //initializeVisualisationWithClass(networkname);
-              testPostSequence(networkname);
+              preSequence(networkname);
 				
             },
             function(e) { 
@@ -276,13 +276,11 @@ function preSequence(networkname_) {
 		cursor++;
 		
 		if (cursor == prereqs.length) {
-			//updateVisualisationWithClass(networkname_, 1, testPostSequence);
 			initializeVisualisationWithClass(networkname);
 			
 		} else {
-			testPostSequence(networkname_);
+			preSequence(networkname_);
 		}
-		//updateVisualisationWithClass(networkname_, 0, testPostSequence);
 	});	
 	
 	return true;
@@ -301,15 +299,7 @@ function postSequence(networkname_) {
 		data: JSON.stringify(postreqs[cursor].payload),
 	}).done(function() {
 		cursor++;
-		
-		if (cursor == postreqs.length) {
-			//updateVisualisationWithClass(networkname_, 1, testPostSequence);
-			initializeVisualisationWithClass(networkname);
-			
-		} else {
-			testPostSequence(networkname_);
-		}
-		//updateVisualisationWithClass(networkname_, 0, testPostSequence);
+		updateVisualisationWithClass(networkname, 100, postSequence);
 	});	
 	
 	return true;
@@ -364,6 +354,8 @@ function initializeVisualisationWithClass(networkname_){
                 //self.visualisationInterval = setInterval(updateVisualisationWithClass,1000);
                 //setTimeOut(function() {updateVisualisationWithClass(networkname_, 1, testPostSequence)}, 0);
                 //updateVisualisationWithClass(networkname_, 1, testPostSequence)
+                cursor = 0;
+                setTimeout(function() {postSequence(networkname_)}, 1000);
               },
               function(e){ console.log(e); }
             )
