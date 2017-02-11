@@ -1,7 +1,28 @@
+class P2Pd3Sidebar {
+  constructor(selector) {
+    this.sidebar = $(selector)
+  }
+  updateSidebarSelectedNode(data) {
+    var selectedNode = $(this.sidebar).find('#selected-node');
+    selectedNode.addClass('node-selected');
+    selectedNode.find('.node-id').html(data.id);
+    selectedNode.find('.node-balance').html(data.balance);
+
+    selectedNode.find('.node-kademlia-table tbody tr').remove();
+    data["kademlia"]["list"].forEach(function(c){
+      var kademliaTableRow = $('<tr></tr>')
+        .append($('<td>'+c.node_id+'</td>'))
+        .append($('<td>'+c.ip+':'+c.port+'</td>'))
+        .append($('<td>'+c.distance+'</td>'));
+      selectedNode.find('.node-kademlia-table tbody').append(kademliaTableRow);
+    })
+  }
+}
+
 class P2Pd3 {
 
   constructor(svg) {
-	this.updatecount = 0;
+	  this.updatecount = 0;
     this.svg = svg;
 
     this.width = svg.attr("width");
@@ -11,9 +32,11 @@ class P2Pd3 {
     this.graphLinks = []
     this.graphMsgs = []
 
-    this.nodeRadius = 5;
+    this.nodeRadius = 8;
 
     this.color = d3.scaleOrdinal(d3.schemeCategory20);
+
+    this.sidebar = new P2Pd3Sidebar('#sidebar');
   }
 
   // increment callback function during simulation
@@ -56,7 +79,9 @@ class P2Pd3 {
     var simulation = this.simulation = d3.forceSimulation()
         .force("link", d3.forceLink().id(function(d) { return d.id; }))
         .force("charge", d3.forceManyBody())
-        .force("center", d3.forceCenter(this.width / 2, this.height / 2));     
+        .force("center", d3.forceCenter(this.width / 2, this.height / 2))
+        .alphaDecay(0)
+        .alphaMin(0);     
 
     this.graphLinks = links;
     this.link =this.addLinks(links);
@@ -70,7 +95,7 @@ class P2Pd3 {
 
     simulation.force("link")
         .links(this.graphLinks)
-        // .distance(function(l,i){return (22-l.value)*22;});
+        .distance(function(l,i){return 30;});
 
     this.node
         .attr("cx", function(d) { return d.x; })
@@ -86,6 +111,14 @@ class P2Pd3 {
         .enter().append("circle")
         .attr("r", this.nodeRadius)
         .attr("fill", function(d) { return self.color(d.group); })
+        .on("click", function(d) {
+            //deselect
+            self.node.classed("selected", function(p) { return p.selected =  p.previouslySelected = false; })
+            //select
+            d3.select(this).classed("selected",true);
+            self.sidebar.updateSidebarSelectedNode(d);
+
+        })
         .call(d3.drag()
             .on("start", function(d){ self.dragstarted(self.simulation, d); } )
             .on("drag", function(d){ self.dragged(d); } )
@@ -101,9 +134,8 @@ class P2Pd3 {
         .data(links)
         .enter().append("line")
         .attr("stroke", "#808080")
-        // this seems to increment per link in array, independent of which nodes the link belongs to
+        //left as an example of how to set an attribute using per-edge data
         //.attr("stroke-width", function(d) { return Math.sqrt(d.value); });
-        // ... which doesn't give us useful info, and it renders the first invisible ("0")
         .attr("stroke-width", "1.0");
     return this.link;
   }
@@ -112,7 +144,7 @@ class P2Pd3 {
 	
     var self = this;
 	
-	this.updatecount++;
+  	this.updatecount++;
 	
     this.link = this.appendLinks(newLinks);
 
@@ -146,10 +178,22 @@ class P2Pd3 {
                     .attr("fill", function(d) { return d3.scaleOrdinal(d3.schemeCategory20)(d.group) })
                     .attr("r", 5)
                     .attr("x",500)
-                    .call(d3.drag()
-                      .on("start", function(d){ self.dragstarted(self.simulation, d); } )
-                      .on("drag", function(d){ self.dragged(d); } )
-                      .on("end", function(d){ self.dragended(self.simulation, d); } ))
+                    // .on("click", function(d) {
+                    //     alert('test')
+                    //     // if (d3.event.defaultPrevented) return;
+
+                    //     // if (!shiftKey) {
+                    //     //     //if the shift key isn't down, unselect everything
+                    //     //     node.classed("selected", function(p) { return p.selected =  p.previouslySelected = false; })
+                    //     // }
+
+                    //     // // always select this node
+                    //     // d3.select(this).classed("selected", d.selected = !d.previouslySelected);
+                    // })
+                    // .call(d3.drag()
+                    //   .on("start", function(d){ self.dragstarted(self.simulation, d); } )
+                    //   .on("drag", function(d){ self.dragged(d); } )
+                    //   .on("end", function(d){ self.dragended(self.simulation, d); } ))
                     .merge(this.node);
 
     return this.node;
@@ -366,7 +410,35 @@ function initializeVisualisationWithClass(networkname_){
                 console.log("Received graph data from backend");
                 self.graphNodes = $(graph.add)
                     .filter(function(i,e){return e.group === 'nodes'})
-                    .map(function(i,e){ return {id: e.data.id, group: 1}; })
+                    .map(function(i,e){ 
+                    return {
+                      id: e.data.id, 
+                      group: 1,
+                      balance: 111,
+                      kademlia: {
+                        list: [
+                          {
+                            ip: '111.111.111.111',
+                            port: '80',
+                            node_id: 'aaaaa',
+                            distance: '1'
+                          },
+                          {
+                            ip: '222.222.222.222',
+                            port: '81',
+                            node_id: 'bbbbb',
+                            distance: '2'
+                          },
+                          {
+                            ip: '333.333.333.333',
+                            port: '82',
+                            node_id: 'ccccc',
+                            distance: '3'
+                          }
+                        ]
+                      }
+                      }; 
+                    })
                     .toArray();
 
                 self.graphLinks = $(graph.add)
@@ -448,7 +520,7 @@ function updateVisualisationWithClass(networkname_, delay, callback){
                     })
                     .toArray();
                     
-                    if(newNodes.length > 0 || newLinks.length > 0 || removeNodes.length > 0 || removeLinks.length > 0 || triggerMsgs.length > 0) {
+          if(newNodes.length > 0 || newLinks.length > 0 || removeNodes.length > 0 || removeLinks.length > 0 || triggerMsgs.length > 0) {
 						self.visualisation.updateVisualisation(newNodes,newLinks,removeNodes,removeLinks,triggerMsgs);
 						setTimeout(function() {callback(networkname_)}, delay);
 					}
@@ -457,49 +529,50 @@ function updateVisualisationWithClass(networkname_, delay, callback){
                 function(e){ console.log(e); }
             )
 
-        };
+};
 
 
-function restartVisualisationWithClass(){
-            var randID = generateUID();
-            var randID2 = generateUID();
+// i believe we can remove this...
+// function restartVisualisationWithClass(){
+//             var randID = generateUID();
+//             var randID2 = generateUID();
 
-            var newNode = {id: randID, group: 2, x: 500, y: 500 }
-            var newNode2 = {id: randID2, group: 2, x: 500, y: 500 }
+//             var newNode = {id: randID, group: 2, x: 500, y: 500 }
+//             var newNode2 = {id: randID2, group: 2, x: 500, y: 500 }
             
-            var newNodes = [newNode,newNode2];
+//             var newNodes = [newNode,newNode2];
 
-            var randNode1 = this.graphNodes[parseInt(Math.random(0,this.graphNodes.length)*10)];
-            var randNode2 = this.graphNodes[parseInt(Math.random(0,this.graphNodes.length)*10)];
-            var randNode3 = this.graphNodes[parseInt(Math.random(0,this.graphNodes.length)*10)];
+//             var randNode1 = this.graphNodes[parseInt(Math.random(0,this.graphNodes.length)*10)];
+//             var randNode2 = this.graphNodes[parseInt(Math.random(0,this.graphNodes.length)*10)];
+//             var randNode3 = this.graphNodes[parseInt(Math.random(0,this.graphNodes.length)*10)];
 
-            var randNode21 = this.graphNodes[parseInt(Math.random(0,this.graphNodes.length)*10)];
-            var randNode22 = this.graphNodes[parseInt(Math.random(0,this.graphNodes.length)*10)];
-            var randNode23 = this.graphNodes[parseInt(Math.random(0,this.graphNodes.length)*10)];
-
-
-
-            var newLinks = []
-
-            newLinks.push({source: newNode, target: randNode1, group: 1, value: 1 }); // Add a-b.
-            newLinks.push({source: newNode, target: randNode2, group: 1, value: 1 }); // Add a-b.
-            newLinks.push({source: newNode, target: randNode3, group: 1, value: 1 }); // Add a-b.
-
-            newLinks.push({source: newNode2, target: randNode21, group: 1, value: 1 }); // Add a-b.
-            newLinks.push({source: newNode2, target: randNode22, group: 1, value: 1 }); // Add a-b.
-            newLinks.push({source: newNode2, target: randNode23, group: 1, value: 1 }); // Add a-b.
+//             var randNode21 = this.graphNodes[parseInt(Math.random(0,this.graphNodes.length)*10)];
+//             var randNode22 = this.graphNodes[parseInt(Math.random(0,this.graphNodes.length)*10)];
+//             var randNode23 = this.graphNodes[parseInt(Math.random(0,this.graphNodes.length)*10)];
 
 
-            newNodes = []
-            newLinks = []
-            var removeNodes = [randNode1,randNode2];
-            var removeLinks = this.graphLinks.filter(function(l){
-                return randNode1.id == l.source.id || randNode1.id == l.target.id; //connected nodes
-            })
-            var removeLinks2 = this.graphLinks.filter(function(l){
-                return randNode2.id == l.source.id || randNode2.id == l.target.id; //connected nodes
-            })
+
+//             var newLinks = []
+
+//             newLinks.push({source: newNode, target: randNode1, group: 1, value: 1 }); // Add a-b.
+//             newLinks.push({source: newNode, target: randNode2, group: 1, value: 1 }); // Add a-b.
+//             newLinks.push({source: newNode, target: randNode3, group: 1, value: 1 }); // Add a-b.
+
+//             newLinks.push({source: newNode2, target: randNode21, group: 1, value: 1 }); // Add a-b.
+//             newLinks.push({source: newNode2, target: randNode22, group: 1, value: 1 }); // Add a-b.
+//             newLinks.push({source: newNode2, target: randNode23, group: 1, value: 1 }); // Add a-b.
+
+
+//             newNodes = []
+//             newLinks = []
+//             var removeNodes = [randNode1,randNode2];
+//             var removeLinks = this.graphLinks.filter(function(l){
+//                 return randNode1.id == l.source.id || randNode1.id == l.target.id; //connected nodes
+//             })
+//             var removeLinks2 = this.graphLinks.filter(function(l){
+//                 return randNode2.id == l.source.id || randNode2.id == l.target.id; //connected nodes
+//             })
           
 
-            this.visualisation.updateVisualisation(newNodes,newLinks,removeNodes,removeLinks.concat(removeLinks2));
-        }
+//             this.visualisation.updateVisualisation(newNodes,newLinks,removeNodes,removeLinks.concat(removeLinks2));
+//         }

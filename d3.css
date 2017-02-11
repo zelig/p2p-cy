@@ -19,9 +19,10 @@ body {
   height:80vh;
   width:40vh;
   float:left;
-  margin: 10px 0px;  
+  margin: 10px 0px 10px 20px;  
   border: solid 1pt #2b2a2a;
   color: lightgrey;
+  padding-left: 20px;
 }
 
 h1 {
@@ -32,4 +33,16 @@ h1 {
   padding-bottom:15px;
   margin-bottom:10px;
   border-bottom: 1px solid lightgrey;
+}
+
+thead td{
+  font-weight:bold;
+}
+
+
+/*nodes*/
+.selected {
+  stroke-width:2px;
+  stroke: pink;
+  r:10px;
 }
