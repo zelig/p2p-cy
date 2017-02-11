@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+     <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1, maximum-scale=1">
+
+    <script src="js/jquery-2.2.4.min.js"></script>
+
+    <script src="js/d3.v4.min.js"></script>
+
+
+    <title>p2p Network Connectivity Graph</title>
+    <link rel="stylesheet" href="d3.css">
+    <script src="d3.js"></script>
+  </head>
+  <body>
+    <h1>p2p Network Connectivity Graph</h1>
+    <svg id="network-visualisation" width="960" height="600"></svg>
+    <div id="sidebar" class=sidebar>
+      <div id="selected-node">
+        <div class="node-selected">
+          <h3>Node Information</h1>
+          <ul>
+            <li> Node Id: <span class="node-id"></span> </li>
+            <li> Balance: <span class="node-balance"></span> </li>
+          </ul>            
+
+          <table class="node-kademlia-table">
+            <thead>
+              <td>Id</td>
+              <td>IP:Port</td>
+              <td>Distance</td>
+            </thead>
+            <tbody>
+              
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
+
+
