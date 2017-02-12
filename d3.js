@@ -231,11 +231,11 @@ function initializeServer(){
             function(d){
               console.log("Backend POST init ok");
               networkname = "0";
-              //initializeMocker();
+              initializeMocker(networkname);
               //setTimeout(initializeVisualisationWithClass,1000);
               //setInterval(testPostSequence, 1000);
               // initializeVisualisation(networkname);
-              initializeVisualisationWithClass(networkname);
+              //initializeVisualisationWithClass(networkname);
               //preSequence(networkname);
 
             },
@@ -245,6 +245,18 @@ function initializeServer(){
             })
 };
 
+function initializeMocker(networkname_) {
+          $.post(BACKEND_URL + "/" + networkname + "/mockevents/").then(
+            function(d){
+              console.log("Backend initializeMocker OK");
+              setTimeout(function(){initializeVisualisationWithClass(networkname_)},1000);
+              
+            },
+            function(e){ 
+              console.log("Error initializing mockevents at " + BACKEND_URL + '0/mockevents/');
+              console.log(e); 
+          })
+};
 
 function initializeVisualisationWithClass(networkname_){
 
@@ -280,7 +292,7 @@ function initializeVisualisationWithClass(networkname_){
                 self.visualisation.initializeVisualisation(self.graphNodes,self.graphLinks);
 
                 // self.visualisationInterval = setInterval(function() {updateVisualisationWithClass(networkname_, 1, updateVisualisationWithClass)},1000);
-                setTimeOut(function() {updateVisualisationWithClass(networkname_, 10001, updateVisualisationWithClass)}, 1000);
+                setTimeout(function() {updateVisualisationWithClass(networkname_, 1000, updateVisualisationWithClass)}, 1000);
                 //updateVisualisatwionWithClass(networkname_, 1, testPostSequence)
                 // cursor = 0;
                 // setTimeout(function() {postSequence(networkname_)}, 2000);
@@ -344,7 +356,7 @@ function updateVisualisationWithClass(networkname_, delay, callback){
 
                     if(newNodes.length > 0 || newLinks.length > 0 || removeNodes.length > 0 || removeLinks.length > 0 || triggerMsgs.length > 0) {
 						self.visualisation.updateVisualisation(newNodes,newLinks,removeNodes,removeLinks,triggerMsgs);
-						setTimeOut(function() {callback(networkname_, delay, callback)}, delay);
+						setTimeout(function() {callback(networkname_, delay, callback)}, delay);
 					}
 
                 },
