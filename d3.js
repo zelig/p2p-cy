@@ -46,7 +46,7 @@ class P2Pd3 {
     if (!d3.event.active) simulation.alphaTarget(0);
     d.fx = null;
     d.fy = null;
-  } 
+  }
   // end event callbacks
 
   initializeVisualisation(nodes,links) {
@@ -56,12 +56,12 @@ class P2Pd3 {
     var simulation = this.simulation = d3.forceSimulation()
         .force("link", d3.forceLink().id(function(d) { return d.id; }))
         .force("charge", d3.forceManyBody())
-        .force("center", d3.forceCenter(this.width / 2, this.height / 2));     
+        .force("center", d3.forceCenter(this.width / 2, this.height / 2));
 
     this.graphLinks = links;
     this.link =this.addLinks(links);
 
-    this.graphNodes = nodes;  
+    this.graphNodes = nodes;
     this.node = this.addNodes(nodes);
 
     simulation
@@ -89,7 +89,7 @@ class P2Pd3 {
         .call(d3.drag()
             .on("start", function(d){ self.dragstarted(self.simulation, d); } )
             .on("drag", function(d){ self.dragged(d); } )
-            .on("end", function(d){ self.dragended(self.simulation, d); } ));   
+            .on("end", function(d){ self.dragended(self.simulation, d); } ));
 
     return this.node;
   }
@@ -109,11 +109,11 @@ class P2Pd3 {
   }
 
   updateVisualisation(newNodes,newLinks,removeNodes,removeLinks,triggerMsgs) {
-	
+
     var self = this;
-	
+
 	this.updatecount++;
-	
+
     this.link = this.appendLinks(newLinks);
 
     this.node = this.appendNodes(newNodes);
@@ -121,11 +121,11 @@ class P2Pd3 {
     this.node = this.removeNodes(removeNodes);
 
     this.link = this.removeLinks(removeLinks);
-    
+
     this.msg = this.triggerMsgs(triggerMsgs);
 
     // // Update and restart the simulation.
-    this.simulation.nodes(this.graphNodes);            
+    this.simulation.nodes(this.graphNodes);
     this.simulation.force("link").links(this.graphLinks);
 
     // this.simulation.force("center", d3.forceCenter(300, 200));
@@ -137,7 +137,7 @@ class P2Pd3 {
   appendNodes(nodes){
     var self = this;
     for (var i = nodes.length - 1; i >= 0; i--) {
-     this.graphNodes.push(nodes[i]); 
+     this.graphNodes.push(nodes[i]);
     }
     this.node = this.node.data(this.graphNodes, function(d) { return d.id;});
     this.node = this.node
@@ -174,7 +174,7 @@ class P2Pd3 {
 				.attr("stroke", "#808080")
 				.attr("stroke-width", "1.0")
 				.merge(this.link);
-    
+
     return this.link;
   }
 
@@ -184,7 +184,7 @@ class P2Pd3 {
     this.link.exit().remove();
     return this.link;
   }
-  
+
 	triggerMsgs(msgs){
 		this.graphMsgs = [];
 		for (var i = 0; i < msgs.length; i++) {
@@ -205,7 +205,7 @@ class P2Pd3 {
   generateUID() {
     return ("0000" + (Math.random()*Math.pow(36,4) << 0).toString(36)).slice(-4)
   }
-  
+
   // we need an index instead for this, if too many nodes will be too slow
   getConnByNodes(sourceid,targetid) {
 	  for (var i = 0; i < this.graphLinks.length; i++) {
@@ -224,141 +224,35 @@ function generateUID() {
 
 var BACKEND_URL='http://127.0.0.1:8888';
 
-var networkname = "metaschmeta";
-
-var cursor = 0;
-
-var prereqs = [
-	{method: "POST", url: "/node", payload: null,},
-	{method: "POST", url: "/node", payload: null,},	
-	{method: "POST", url: "/node", payload: null,},	
-	{method: "POST", url: "/node", payload: null,},
-	{method: "POST", url: "/node", payload: null,},	
-	{method: "POST", url: "/node", payload: null,},	
-	{method: "POST", url: "/node", payload: null,},
-	{method: "POST", url: "/node", payload: null,},	
-	{method: "POST", url: "/node", payload: null,},	
-	{method: "POST", url: "/node", payload: null,},	
-	
-	{method: "PUT", url: "/node", payload: {One: 1},},
-	{method: "PUT", url: "/node", payload: {One: 2},},
-	{method: "PUT", url: "/node", payload: {One: 3},},
-	{method: "PUT", url: "/node", payload: {One: 4},},
-	{method: "PUT", url: "/node", payload: {One: 5},},
-	{method: "PUT", url: "/node", payload: {One: 6},},
-	{method: "PUT", url: "/node", payload: {One: 7},},
-	{method: "PUT", url: "/node", payload: {One: 8},},
-	{method: "PUT", url: "/node", payload: {One: 9},},
-	{method: "PUT", url: "/node", payload: {One: 10},},
-	
-	{method: "PUT", url: "/node", payload: {One: 1, Other: 2}},
-	{method: "PUT", url: "/node", payload: {One: 2, Other: 3}},
-	{method: "PUT", url: "/node", payload: {One: 3, Other: 4}},
-	{method: "PUT", url: "/node", payload: {One: 4, Other: 5}},
-	{method: "PUT", url: "/node", payload: {One: 5, Other: 6}},
-	{method: "PUT", url: "/node", payload: {One: 6, Other: 7}},
-	{method: "PUT", url: "/node", payload: {One: 7, Other: 8}},
-	{method: "PUT", url: "/node", payload: {One: 8, Other: 9}},
-	{method: "PUT", url: "/node", payload: {One: 9, Other: 10}},
-	{method: "PUT", url: "/node", payload: {One: 10, Other: 1}},
-	
-]
-
-var postreqs = [
-	{method: "PUT", url: "/node", payload: {One: 1, Other: 2, AssetType: 1}},
-	{method: "PUT", url: "/node", payload: {One: 5, Other: 6, AssetType: 1}},
-	//{method: "PUT", url: "/node", payload: {One: 1, Other: 2, AssetType: 1}},
-]
-
 initializeServer();
 
 function initializeServer(){
-		console.log("we have a snapshot of " + prereqs.length + " requests and animation of " + postreqs.length + " requests linedup for you in this run");
-          $.post(BACKEND_URL + "/", JSON.stringify({"Id":networkname})).then(
+          $.post(BACKEND_URL).then(
             function(d){
               console.log("Backend POST init ok");
+              networkname = "0";
               //initializeMocker();
               //setTimeout(initializeVisualisationWithClass,1000);
               //setInterval(testPostSequence, 1000);
-              //initializeVisualisation(networkname);
-              //initializeVisualisationWithClass(networkname);
-              preSequence(networkname);
-				
+              // initializeVisualisation(networkname);
+              initializeVisualisationWithClass(networkname);
+              //preSequence(networkname);
+
             },
-            function(e) { 
-              console.log("Error sending POST to " + BACKEND_URL); 
-              console.log(e); 
+            function(e) {
+              console.log("Error sending POST to " + BACKEND_URL);
+              console.log(e);
             })
 };
 
-function preSequence(networkname_) {
-	
-	if (cursor == prereqs.length)
-		return false;
-		
-	var effectiveurl = BACKEND_URL + "/" + networkname_ + prereqs[cursor].url + "/";
-	$.ajax({
-		type: prereqs[cursor].method,
-		url: effectiveurl,
-		dataType: "json",
-		mimeType: "application/json",
-		data: JSON.stringify(prereqs[cursor].payload),
-	}).done(function() {
-		cursor++;
-		
-		if (cursor == prereqs.length) {
-			initializeVisualisationWithClass(networkname);
-			
-		} else {
-			preSequence(networkname_);
-		}
-	});	
-	
-	return true;
-}
-
-function postSequence(networkname_) {
-	
-	if (cursor == postreqs.length)
-		return false;
-		
-	var effectiveurl = BACKEND_URL + "/" + networkname_ + postreqs[cursor].url + "/";
-	$.ajax({
-		type: postreqs[cursor].method,
-		url: effectiveurl,
-		dataType: "json",
-		mimeType: "application/json",
-		data: JSON.stringify(postreqs[cursor].payload),
-	}).done(function() {
-		cursor++;
-		updateVisualisationWithClass(networkname, 500, postSequence);
-	});	
-	
-	return true;
-}
-
-/*
-function initializeMocker() {
-          $.post(BACKEND_URL + '0/mockevents/').then(
-            function(d){
-              console.log("Backend initializeMocker OK");
-              setTimeout(initializeVisualisationWithClass,1000);
-              
-            },
-            function(e){ 
-              console.log("Error initializing mockevents at " + BACKEND_URL + '0/mockevents/');
-              console.log(e); 
-          })
-};
-*/
 
 function initializeVisualisationWithClass(networkname_){
 
             console.log("Initializing visualization");
             var self = this;
 
-            this.visualisation 
-                = window.visualisation 
+            this.visualisation
+                = window.visualisation
                 = new P2Pd3(d3.select("svg"));
 
             $.get(BACKEND_URL + '/' + networkname_ + "/").then(
@@ -371,25 +265,25 @@ function initializeVisualisationWithClass(networkname_){
 
                 self.graphLinks = $(graph.add)
                     .filter(function(i,e){return e.group === 'edges'})
-                    .map(function(i,e){ 
+                    .map(function(i,e){
                         return {
-                            source: e.data.source, 
-                            target: e.data.target, 
+                            source: e.data.source,
+                            target: e.data.target,
                             group: 1,
                             value: i
                         };
                     })
                     .toArray();
-				
-				
-                    
+
+
+
                 self.visualisation.initializeVisualisation(self.graphNodes,self.graphLinks);
 
-                //self.visualisationInterval = setInterval(updateVisualisationWithClass,1000);
-                //setTimeOut(function() {updateVisualisationWithClass(networkname_, 1, testPostSequence)}, 0);
-                //updateVisualisationWithClass(networkname_, 1, testPostSequence)
-                cursor = 0;
-                setTimeout(function() {postSequence(networkname_)}, 2000);
+                // self.visualisationInterval = setInterval(function() {updateVisualisationWithClass(networkname_, 1, updateVisualisationWithClass)},1000);
+                setTimeOut(function() {updateVisualisationWithClass(networkname_, 10001, updateVisualisationWithClass)}, 1000);
+                //updateVisualisatwionWithClass(networkname_, 1, testPostSequence)
+                // cursor = 0;
+                // setTimeout(function() {postSequence(networkname_)}, 2000);
               },
               function(e){ console.log(e); }
             )
@@ -401,7 +295,7 @@ function updateVisualisationWithClass(networkname_, delay, callback){
             var self = this;
             $.get(BACKEND_URL + '/' + networkname_ + "/").then(
                 function(graph){
-                    
+
                     var newNodes = $(graph.add)
                     .filter(function(i,e){return e.group === 'nodes'})
                     .map(function(i,e){ return {id: e.data.id, group: 1}; })
@@ -409,10 +303,10 @@ function updateVisualisationWithClass(networkname_, delay, callback){
 
                     var newLinks = $(graph.add)
                     .filter(function(i,e){return e.group === 'edges'})
-                    .map(function(i,e){ 
+                    .map(function(i,e){
                         return {
-                            source: e.data.source, 
-                            target: e.data.target, 
+                            source: e.data.source,
+                            target: e.data.target,
                             group: 1,
                             value: i
                         };
@@ -426,33 +320,33 @@ function updateVisualisationWithClass(networkname_, delay, callback){
 
                     var removeLinks = $(graph.remove)
                     .filter(function(i,e){return e.group === 'edges'})
-                    .map(function(i,e){ 
+                    .map(function(i,e){
                         return {
-                            source: e.data.source, 
-                            target: e.data.target, 
+                            source: e.data.source,
+                            target: e.data.target,
                             group: 1,
                             value: i
                         };
                     })
                     .toArray();
-					
+
 					var triggerMsgs = $(graph.add)
                     .filter(function(i,e){return e.group === 'msgs'})
-                    .map(function(i,e){ 
+                    .map(function(i,e){
                         return {
-                            source: e.data.source, 
-                            target: e.data.target, 
+                            source: e.data.source,
+                            target: e.data.target,
                             group: 1,
                             value: i
                         };
                     })
                     .toArray();
-                    
+
                     if(newNodes.length > 0 || newLinks.length > 0 || removeNodes.length > 0 || removeLinks.length > 0 || triggerMsgs.length > 0) {
 						self.visualisation.updateVisualisation(newNodes,newLinks,removeNodes,removeLinks,triggerMsgs);
-						setTimeout(function() {callback(networkname_)}, delay);
+						setTimeOut(function() {callback(networkname_, delay, callback)}, delay);
 					}
-                    
+
                 },
                 function(e){ console.log(e); }
             )
@@ -466,7 +360,7 @@ function restartVisualisationWithClass(){
 
             var newNode = {id: randID, group: 2, x: 500, y: 500 }
             var newNode2 = {id: randID2, group: 2, x: 500, y: 500 }
-            
+
             var newNodes = [newNode,newNode2];
 
             var randNode1 = this.graphNodes[parseInt(Math.random(0,this.graphNodes.length)*10)];
@@ -499,7 +393,7 @@ function restartVisualisationWithClass(){
             var removeLinks2 = this.graphLinks.filter(function(l){
                 return randNode2.id == l.source.id || randNode2.id == l.target.id; //connected nodes
             })
-          
+
 
             this.visualisation.updateVisualisation(newNodes,newLinks,removeNodes,removeLinks.concat(removeLinks2));
         }
