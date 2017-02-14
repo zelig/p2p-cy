@@ -4,8 +4,9 @@ function initializeServer(networkname_){
           $.post(BACKEND_URL).then(
             function(d){
               console.log("Backend POST init ok");
-              initializeMocker(networkname_);
-            },
+              // initializeMocker(networkname_);
+              setTimeout(function(){initializeVisualisationWithClass(networkname_)},1000);
+},
             function(e) {
               console.log("Error sending POST to " + BACKEND_URL);
               console.log(e);
@@ -16,12 +17,11 @@ function initializeMocker(networkname_) {
           $.post(BACKEND_URL + "/" + networkname_ + "/mockevents/").then(
             function(d){
               console.log("Backend initializeMocker OK");
-              setTimeout(function(){initializeVisualisationWithClass(networkname_)},1000);
-              
+
             },
-            function(e){ 
+            function(e){
               console.log("Error initializing mockevents at " + BACKEND_URL + '0/mockevents/');
-              console.log(e); 
+              console.log(e);
           })
 };
 
@@ -39,9 +39,9 @@ function initializeVisualisationWithClass(networkname_){
                 console.log("Received graph data from backend");
                 self.graphNodes = $(graph.add)
                     .filter(function(i,e){return e.group === 'nodes'})
-                    .map(function(i,e){ 
+                    .map(function(i,e){
                     return {
-                      id: e.data.id, 
+                      id: e.data.id,
                       group: 1,
                       balance: 111,
                       kademlia: {
@@ -66,7 +66,7 @@ function initializeVisualisationWithClass(networkname_){
                           }
                         ]
                       }
-                      }; 
+                      };
                     })
                     .toArray();
 
@@ -150,7 +150,7 @@ function updateVisualisationWithClass(networkname_, delay, callback){
 						setTimeout(function() {callback(networkname_, delay, callback)}, delay);
 					}
 
-                },
+                } ,
                 function(e){ console.log(e); }
             )
 
