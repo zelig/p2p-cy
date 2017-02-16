@@ -145,10 +145,8 @@ function updateVisualisationWithClass(networkname_, delay, callback){
                     })
                     .toArray();
 
-                    if(newNodes.length > 0 || newLinks.length > 0 || removeNodes.length > 0 || removeLinks.length > 0 || triggerMsgs.length > 0) {
 						self.visualisation.updateVisualisation(newNodes,newLinks,removeNodes,removeLinks,triggerMsgs);
 						setTimeout(function() {callback(networkname_, delay, callback)}, delay);
-					}
 
                 } ,
                 function(e){ console.log(e); }
