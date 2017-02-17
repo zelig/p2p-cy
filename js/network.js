@@ -1,4 +1,21 @@
-var BACKEND_URL='http://127.0.0.1:8888';
+var BACKEND_URL='http://localhost:8888';
+
+var m;
+var s = 0;;
+var time_elapsed = new Date();
+var interval = function () {
+    setInterval(function(){
+      s++;
+      var temps= s%60;
+      m = Math.floor(s/60);
+      var val = "" + m + ":" + (temps>9?"":"0") + temps;
+      $("#time-elapsed").text(val);
+    },1000);
+};
+
+var upnodes   = 0;
+var uplinks   = 0;
+
 
 function initializeServer(networkname_){
           $.post(BACKEND_URL).then(
@@ -6,6 +23,7 @@ function initializeServer(networkname_){
               console.log("Backend POST init ok");
               // initializeMocker(networkname_);
               setTimeout(function(){initializeVisualisationWithClass(networkname_)},1000);
+              interval();
 },
             function(e) {
               console.log("Error sending POST to " + BACKEND_URL);
@@ -70,6 +88,10 @@ function initializeVisualisationWithClass(networkname_){
                     })
                     .toArray();
 
+
+                upnodes = self.graphNodes.length;
+                $("#nodes-up-count").text(upnodes);
+
                 self.graphLinks = $(graph.add)
                     .filter(function(i,e){return e.group === 'edges'})
                     .map(function(i,e){
@@ -83,6 +105,9 @@ function initializeVisualisationWithClass(networkname_){
                     .toArray();
 
 
+                
+                uplinks = self.graphLinks.length;
+                $("#edges-up-count").text(uplinks);
 
                 self.visualisation.initializeVisualisation(self.graphNodes,self.graphLinks);
 
@@ -99,11 +124,21 @@ function updateVisualisationWithClass(networkname_, delay, callback){
             $.get(BACKEND_URL + '/' + networkname_ + "/").then(
                 function(graph){
 
+
+                    console.log("Updating visualization with new graph");
+
+                    //new nodes
                     var newNodes = $(graph.add)
                     .filter(function(i,e){return e.group === 'nodes'})
                     .map(function(i,e){ return {id: e.data.id, group: 1}; })
                     .toArray();
 
+                    
+                    upnodes += newNodes.length;
+                    $("#nodes-up-count").text(upnodes);
+                    $("#nodes-add-count").text(newNodes.length);
+
+                    //new connections 
                     var newLinks = $(graph.add)
                     .filter(function(i,e){return e.group === 'edges'})
                     .map(function(i,e){
@@ -116,11 +151,22 @@ function updateVisualisationWithClass(networkname_, delay, callback){
                     })
                     .toArray();
 
+
+                    uplinks += newLinks.length;
+                    $("#edges-up-count").text(uplinks);
+                    $("#edges-add-count").text(newLinks.length);
+
+                    //down nodes
                     var removeNodes = $(graph.remove)
                     .filter(function(i,e){return e.group === 'nodes'})
                     .map(function(i,e){ return {id: e.data.id, group: 1}; })
                     .toArray();
 
+                    upnodes -= removeNodes.length;
+                    $("#nodes-up-count").text(upnodes);
+                    $("#nodes-remove-count").text(removeNodes.length);
+
+                    //down connections 
                     var removeLinks = $(graph.remove)
                     .filter(function(i,e){return e.group === 'edges'})
                     .map(function(i,e){
@@ -132,6 +178,11 @@ function updateVisualisationWithClass(networkname_, delay, callback){
                         };
                     })
                     .toArray();
+
+
+                    uplinks -= removeLinks.length;
+                    $("#edges-up-count").text(uplinks);
+                    $("#edges-remove-count").text(removeNodes.length);
 
 					var triggerMsgs = $(graph.add)
                     .filter(function(i,e){return e.group === 'msgs'})

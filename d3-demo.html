@@ -28,18 +28,21 @@
       <div id="sidebar" class=sidebar>
         <div id="selected-node">
           <div class="actions">
-            <button id="start-visualisation">Start New Visualisation</button>
+            <button class="inline" id="start-visualisation">Start New Visualisation</button>
+            <div class="inline elapsed">Time elapsed: <span id="time-elapsed"></span></div>
           </div>
             <div class="counts">
               <h3>Nodes</h1>
               <table class="node-counts counts-table">
                 <thead>
                   <td>UP</td>
-                  <td>DOWN</td>
+                  <td>ADD</td>
+                  <td>REMOVE</td>
                 </thead>
                 <tbody>
-                  <td id="nodes-up-count">12</td>
-                  <td id="nodes-down-count">34</td>
+                  <td id="nodes-up-count"></td>
+                  <td id="nodes-add-count"></td>
+                  <td id="nodes-remove-count"></td>
                 </tbody>
               </table>
             </div>
@@ -49,11 +52,13 @@
               <table class="edge-counts counts-table">
                 <thead>
                   <td>UP</td>
-                  <td>DOWN</td>
+                  <td>ADD</td>
+                  <td>REMOVE</td>
                 </thead>
                 <tbody>
-                  <td id="edges-up-count">56</td>
-                  <td id="edges-down-count">78</td>
+                  <td id="edges-up-count"></td>
+                  <td id="edges-add-count"></td>
+                  <td id="edges-remove-count"></td>
                 </tbody>
               </table>
             </div>
