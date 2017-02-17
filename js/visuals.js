@@ -8,14 +8,14 @@ class P2Pd3Sidebar {
     selectedNode.find('.node-id').html(data.id);
     selectedNode.find('.node-balance').html(data.balance);
 
-    selectedNode.find('.node-kademlia-table tbody tr').remove();
-    data["kademlia"]["list"].forEach(function(c){
-      var kademliaTableRow = $('<tr></tr>')
-        .append($('<td>'+c.node_id+'</td>'))
-        .append($('<td>'+c.ip+':'+c.port+'</td>'))
-        .append($('<td>'+c.distance+'</td>'));
-      selectedNode.find('.node-kademlia-table tbody').append(kademliaTableRow);
-    })
+    // selectedNode.find('.node-kademlia-table tbody tr').remove();
+    // data["kademlia"]["list"].forEach(function(c){
+    //   var kademliaTableRow = $('<tr></tr>')
+    //     .append($('<td>'+c.node_id+'</td>'))
+    //     .append($('<td>'+c.ip+':'+c.port+'</td>'))
+    //     .append($('<td>'+c.distance+'</td>'));
+    //   selectedNode.find('.node-kademlia-table tbody').append(kademliaTableRow);
+    // })
   }
 }
 

@@ -1,12 +1,24 @@
 * {
-  font-family: sans-serif;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  letter-spacing: 0.04em;
 }
 
 body {
   background: black;
 }
 
-.cy {
+h1 {
+  color: white;
+  font-size:14pt;
+  margin-left:20px;
+  padding-bottom:15px;
+  margin-bottom:10px;
+  border-bottom: 1px solid #2b2a2a;
+  letter-spacing: 0.08em;
+  font-style: oblique;
+}
+
+#network-visualisation {
   border: solid 1pt #2b2a2a;
   width: 80vh;
   height: 80vh;
@@ -14,6 +26,8 @@ body {
   margin: 10px 20px;
   float:left;
 }
+
+/*sidebar*/
 
 .sidebar {
   height:80vh;
@@ -23,22 +37,56 @@ body {
   border: solid 1pt #2b2a2a;
   color: lightgrey;
   padding-left: 20px;
+  padding-right: 20px;
 }
 
-h1 {
+.sidebar h3 {
   color: white;
   letter-spacing: 0.04em;
   font-size:14pt;
-  margin-left:20px;
-  padding-bottom:15px;
+  padding-bottom:5px;
   margin-bottom:10px;
-  border-bottom: 1px solid lightgrey;
+  border-bottom: 1px solid #2b2a2a;
 }
 
-thead td{
-  font-weight:bold;
+.sidebar li {
+  list-style: none;
+  text-indent:0;
 }
 
+.actions button{
+  background:black;
+  padding:10px;
+  margin:20px 10px 0 0;
+  border: solid 1pt lightgrey;
+  color:lightgrey;
+}
+
+.counts{
+  float:left;
+  width:46%;
+  padding-right:4%;
+  margin-bottom:20px;
+}
+
+.counts-table td{
+  width:50px;
+  text-align: center;
+  border: solid 1pt #2b2a2a;
+  padding:10px;
+}
+
+.counts-table thead td{
+
+}
+
+.counts-table tbody td{
+  font-size:30pt;
+}
+
+.fixed-width{
+  font-family: "Courier New", Courier, monospace
+}
 
 /*nodes*/
 .selected {

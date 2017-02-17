@@ -13,37 +13,86 @@
     <script>
     $(document).ready(function() {
 			console.log("loaded");
-			initializeServer("0");	
-	});
+      $('#start-visualisation').on('click',function(){ 
+        initializeServer("0"); 
+      });
+	  });
     </script>
     
     <link rel="stylesheet" href="d3.css">
     
   </head>
   <body>
-    <h1>p2p Network Connectivity Graph</h1>
-    <svg id="network-visualisation" width="960" height="600"></svg>
-    <div id="sidebar" class=sidebar>
-      <div id="selected-node">
-        <div class="node-selected">
-          <h3>Node Information</h1>
-          <ul>
-            <li> Node Id: <span class="node-id"></span> </li>
-            <li> Balance: <span class="node-balance"></span> </li>
-          </ul>            
+    <div class="wrapper">
+      <h1>p2p Network Connectivity Graph</h1>
+      <div id="sidebar" class=sidebar>
+        <div id="selected-node">
+          <div class="actions">
+            <button id="start-visualisation">Start New Visualisation</button>
+          </div>
+            <div class="counts">
+              <h3>Nodes</h1>
+              <table class="node-counts counts-table">
+                <thead>
+                  <td>UP</td>
+                  <td>DOWN</td>
+                </thead>
+                <tbody>
+                  <td id="nodes-up-count">12</td>
+                  <td id="nodes-down-count">34</td>
+                </tbody>
+              </table>
+            </div>
 
-          <table class="node-kademlia-table">
-            <thead>
-              <td>Id</td>
-              <td>IP:Port</td>
-              <td>Distance</td>
-            </thead>
-            <tbody>
-              
-            </tbody>
-          </table>
+            <div class="counts clear">
+              <h3>Connections</h1>
+              <table class="edge-counts counts-table">
+                <thead>
+                  <td>UP</td>
+                  <td>DOWN</td>
+                </thead>
+                <tbody>
+                  <td id="edges-up-count">56</td>
+                  <td id="edges-down-count">78</td>
+                </tbody>
+              </table>
+            </div>
+
+          <div class="node-selected">
+            <div class="node-info">
+              <h3>Node Information</h1>
+              <ul>
+                <li> ID: <span class="node-id"></span> </li>
+                <li> Database Size: <span class="node-balance"></span> </li>
+              </ul>            
+
+              <pre id="kamemlia-text-table" class="fixed-width"> ___  __    ________  ________     
+|\  \|\  \ |\   __  \|\   ___ \    
+\ \  \/  /|\ \  \|\  \ \  \_|\ \   
+ \ \   ___  \ \   __  \ \  \ \\ \  
+  \ \  \\ \  \ \  \ \  \ \  \_\\ \ 
+   \ \__\\ \__\ \__\ \__\ \_______\
+    \|__| \|__|\|__|\|__|\|_______|
+                                   
+                                   
+                                   
+</pre>
+
+<!--               <table class="node-kademlia-table">
+                <thead>
+                  <td>Id</td>
+                  <td>IP:Port</td>
+                  <td>Distance</td>
+                </thead>
+                <tbody>
+                  
+                </tbody>
+              </table> -->
+            </div>
+          </div>
         </div>
       </div>
+      <svg id="network-visualisation" width="780" height="780"></svg>
     </div>
   </body>
 </html>
