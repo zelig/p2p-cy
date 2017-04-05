@@ -10,15 +10,6 @@
     <script src="js/visuals.js"></script>
     <script src="js/network.js"></script>
     
-    <script>
-    $(document).ready(function() {
-			console.log("loaded");
-      $('#start-visualisation').on('click',function(){ 
-        initializeServer("0"); 
-      });
-	  });
-    </script>
-    
     <link rel="stylesheet" href="d3.css">
     
   </head>
@@ -28,8 +19,27 @@
       <div id="sidebar" class=sidebar>
         <div id="selected-node">
           <div class="actions">
-            <button class="inline" id="start-visualisation">Start New Visualisation</button>
-            <div class="inline elapsed">Time elapsed: <span id="time-elapsed"></span></div>
+            <div class="action-btn-wrapper">
+              <button class="action-btn inline" id="play"><img width="30" src="./play.png"/></button>
+              <div class="icontext">Start visualization</div>
+            </div>
+            <div class="action-btn-wrapper">
+              <button class="action-btn inline" id="pause"><img width="30" src="./pause.png"/></button>
+              <div class="icontext">Pause visualization</div>
+            </div>
+            <div class="action-btn-spacer"></div>
+            <div class="action-btn-wrapper">
+              <button class="action-btn inline" id="snapshot"><img width="30" src="./snapshot.png"/></button>
+              <div class="icontext">Take a snapshot</div>
+            </div>
+            <div class="action-btn-wrapper">
+              <button class="action-btn inline" id="restore"><img width="30" src="./restore.png"/></button>
+              <div class="icontext">Restore snapshot</div>
+            </div>
+            <div class="inline elapsed">Time elapsed: <span id="time-elapsed">00:00:00</span></div>
+          </div>
+          <div class="actions">
+            <input type="range">
           </div>
             <div class="counts">
               <h3>Nodes</h1>
@@ -96,6 +106,14 @@
             </div>
           </div>
         </div>
+      </div>
+      <div id="error-messages">
+        Oooops - error connecting to backend!
+        <br/>
+        <div id="error-reason">
+        </div>
+      </div>
+      <div id="status-messages">
       </div>
       <svg id="network-visualisation" width="780" height="780"></svg>
     </div>
