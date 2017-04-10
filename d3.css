@@ -219,7 +219,12 @@ input[type=range]:focus::-ms-fill-upper {
 .selected {
   stroke-width:2px;
   stroke: pink;
-  r:10px;
+  r:16px;
+  fill: red;
+}
+
+.node-bar {
+  display:none;
 }
 
 #error-messages {
@@ -236,4 +241,10 @@ input[type=range]:focus::-ms-fill-upper {
   text-align: center;
 }
 
+.kademlia-info {
+  font-size: 0.8em;
+}
 
+.stale {
+  opacity: 0.4;
+}

@@ -4,18 +4,45 @@ class P2Pd3Sidebar {
   }
   updateSidebarSelectedNode(data) {
     var selectedNode = $(this.sidebar).find('#selected-node');
+    $(".node-bar").show();
     selectedNode.addClass('node-selected');
-    selectedNode.find('.node-id').html(data.id);
-    selectedNode.find('.node-balance').html(data.balance);
+    selectedNode.find('#node-id').html(this.nodeShortLabel(data.id));
+    selectedNode.find('#node-index').html(data.index);
+    //selectedNode.find('.node-balance').html(data.balance);
 
-    // selectedNode.find('.node-kademlia-table tbody tr').remove();
-    // data["kademlia"]["list"].forEach(function(c){
-    //   var kademliaTableRow = $('<tr></tr>')
-    //     .append($('<td>'+c.node_id+'</td>'))
-    //     .append($('<td>'+c.ip+':'+c.port+'</td>'))
-    //     .append($('<td>'+c.distance+'</td>'));
-    //   selectedNode.find('.node-kademlia-table tbody').append(kademliaTableRow);
-    // })
+    var payload = [];
+    payload.push(data.id);
+    var jsonpayload = JSON.stringify(payload);
+
+    var classThis = this;
+  
+    $.ajax({
+      url: BACKEND_URL + "/"  + networkname + "/nodes",
+      data: jsonpayload,
+      type: "POST",
+      dataType: "json"
+      }).then(
+        function(d){
+          console.log("Successfully retrieved node info for id: " + data.id);
+          var nodeDom = selectedNode.find('#node-kademlia-table');
+          //console.log(d);
+          nodeDom.html(classThis.formatNodeHTML(d[0]));
+          nodeDom.removeClass("stale");
+        },
+        function(e){
+          console.log("Error retrieving node info for id: " + data.id);
+          console.log(e);
+        }
+    );
+
+  }
+
+  formatNodeHTML(str) {
+    return str.replace(/\n/g,"<br/>");
+  }
+
+  nodeShortLabel(id) {
+    return id.substr(0,8);
   }
 }
 
@@ -32,7 +59,7 @@ class P2Pd3 {
     this.graphLinks = []
     this.graphMsgs = []
 
-    this.nodeRadius = 10;
+    this.nodeRadius = 16;
 
     this.color = d3.scaleOrdinal(d3.schemeCategory20);
 
@@ -119,7 +146,6 @@ class P2Pd3 {
             //select
             d3.select(this).classed("selected",true);
             self.sidebar.updateSidebarSelectedNode(d);
-
         })
         .call(d3.drag()
             .on("start", function(d){ self.dragstarted(self.simulation, d); } )

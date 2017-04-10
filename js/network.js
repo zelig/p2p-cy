@@ -53,10 +53,10 @@ $(document).ready(function() {
 });
 
 function refreshViz() {
-  //runViz = setInterval(function() {updateVisualisationWithClass(networkname, 1000, updateVisualisationWithClass)}, 1000);
   runViz = setInterval(function() {
     updateVisualisationWithClass(networkname, 1000, null) 
-  }, 1500);
+  }, 1000);
+  
 }
 
 function initializeServer(networkname_){
@@ -65,25 +65,24 @@ function initializeServer(networkname_){
   $.post(BACKEND_URL).then(
     function(d){
       console.log("Backend POST init ok");
-              // initializeMocker(networkname_);
-              setTimeout(function(){initializeVisualisationWithClass(networkname_)},1000);
-              startTimer();
-            },
-            function(e,s,err) {
-              $("#error-messages").show();
-              $("#error-reason").text("Is the backend running?");
-              $('#play').prop("disabled",false);
-              $('#pause').prop("disabled",true);
-              console.log("Error sending POST to " + BACKEND_URL);
-              console.log(e);
-            })
+              //initializeMocker(networkname_);
+      setTimeout(function(){initializeVisualisationWithClass(networkname_)},1000);
+      startTimer();
+    },
+    function(e,s,err) {
+      $("#error-messages").show();
+      $("#error-reason").text("Is the backend running?");
+      $('#play').prop("disabled",false);
+      $('#pause').prop("disabled",true);
+      console.log("Error sending POST to " + BACKEND_URL);
+      console.log(e);
+    })
 };
 
 function initializeMocker(networkname_) {
   $.post(BACKEND_URL + "/" + networkname_ + "/mockevents/").then(
     function(d){
       console.log("Backend initializeMocker OK");
-
     },
     function(e){
       console.log("Error initializing mockevents at " + BACKEND_URL + '0/mockevents/');
@@ -95,7 +94,6 @@ function initializeVisualisationWithClass(networkname_){
 
   console.log("Initializing visualization");
   var self = this;
-  console.log(this);
 
   this.visualisation
   = window.visualisation
@@ -104,7 +102,7 @@ function initializeVisualisationWithClass(networkname_){
   $.get(BACKEND_URL + '/' + networkname_ + "/").then(
     function(graph){
       console.log("Received graph data from backend");
-      console.log(graph.add);
+      //console.log(graph.add);
       self.graphNodes = $(graph.add)
         .filter(function(i,e){return e.group === 'nodes'})
         .map(function(i,e){
@@ -115,7 +113,7 @@ function initializeVisualisationWithClass(networkname_){
         })
 
         .toArray();
-      console.log(self.graphNodes);
+      //console.log(self.graphNodes);
 
 
       upnodes = self.graphNodes.length;
@@ -133,7 +131,7 @@ function initializeVisualisationWithClass(networkname_){
       })
       .toArray();
 
-      console.log(self.graphLinks);
+      //console.log(self.graphLinks);
 
       
       uplinks = self.graphLinks.length;
@@ -158,16 +156,17 @@ function updateVisualisationWithClass(networkname_, delay, callback){
 
       console.log("Updating visualization with new graph");
 
-      console.log(graph);
-      console.log($(graph.add));
-      console.log($(graph.remove));
+      //console.log(graph);
+      //console.log($(graph.add));
+      //console.log($(graph.remove));
+      $('#node-kademlia-table').addClass("stale");
       //new nodes
       var newNodes = $(graph.add)
       .filter(function(i,e){return e.group === 'nodes'})
       .map(function(i,e){ return {id: e.data.id, group: 1}; })
       .toArray();
 
-      console.log(newNodes);
+      //console.log(newNodes);
       
       upnodes += newNodes.length;
       $("#nodes-up-count").text(upnodes);
@@ -186,7 +185,7 @@ function updateVisualisationWithClass(networkname_, delay, callback){
       })
       .toArray();
 
-      console.log(newLinks);
+      //console.log(newLinks);
 
       uplinks += newLinks.length;
       $("#edges-up-count").text(uplinks);
@@ -200,11 +199,11 @@ function updateVisualisationWithClass(networkname_, delay, callback){
       .toArray();
       */
       var removeNodes = $(graph.remove)
-      .filter(function(i,e){return e.length == 4})
+      .filter(function(i,e){return e.group === "nodes" })
       .map(function(i,e){ return {id: e, group: 1}; })
       .toArray();
 
-      console.log(removeNodes);
+      //console.log(removeNodes);
 
       upnodes -= removeNodes.length;
       $("#nodes-up-count").text(upnodes);
@@ -225,10 +224,10 @@ function updateVisualisationWithClass(networkname_, delay, callback){
       .toArray();
       */
       var removeLinks = $(graph.remove)
-      .filter(function(i,e){return e.length > 4})
+      .filter(function(i,e){return e.group === "edges" })
       .toArray();
 
-      console.log(removeLinks);
+      //console.log(removeLinks);
 
       uplinks -= removeLinks.length;
       $("#edges-up-count").text(uplinks);
@@ -247,15 +246,13 @@ function updateVisualisationWithClass(networkname_, delay, callback){
       .toArray();
 
       self.visualisation.updateVisualisation(newNodes,newLinks,removeNodes,removeLinks,triggerMsgs);
-//refreshViz();
-//  setTimeout(function() {callback(networkname_, delay, callback)}, delay);
 
-} ,
-function(e){ 
-$("#error-messages").show();
-$("#error-reason").text("Has the backend been shut down?");
-clearInterval(clockId);
-console.log(e); }
-)
+  } ,
+  function(e){ 
+    $("#error-messages").show();
+    $("#error-reason").text("Has the backend been shut down?");
+    clearInterval(clockId);
+    console.log(e); }
+  )
 
 };
