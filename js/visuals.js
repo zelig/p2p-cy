@@ -4,18 +4,45 @@ class P2Pd3Sidebar {
   }
   updateSidebarSelectedNode(data) {
     var selectedNode = $(this.sidebar).find('#selected-node');
+    $(".node-bar").show();
     selectedNode.addClass('node-selected');
-    selectedNode.find('.node-id').html(data.id);
-    selectedNode.find('.node-balance').html(data.balance);
+    selectedNode.find('#node-id').html(this.nodeShortLabel(data.id));
+    selectedNode.find('#node-index').html(data.index);
+    //selectedNode.find('.node-balance').html(data.balance);
 
-    // selectedNode.find('.node-kademlia-table tbody tr').remove();
-    // data["kademlia"]["list"].forEach(function(c){
-    //   var kademliaTableRow = $('<tr></tr>')
-    //     .append($('<td>'+c.node_id+'</td>'))
-    //     .append($('<td>'+c.ip+':'+c.port+'</td>'))
-    //     .append($('<td>'+c.distance+'</td>'));
-    //   selectedNode.find('.node-kademlia-table tbody').append(kademliaTableRow);
-    // })
+    var payload = [];
+    payload.push(data.id);
+    var jsonpayload = JSON.stringify(payload);
+
+    var classThis = this;
+  
+    $.ajax({
+      url: BACKEND_URL + "/"  + networkname + "/nodes",
+      data: jsonpayload,
+      type: "POST",
+      dataType: "json"
+      }).then(
+        function(d){
+          console.log("Successfully retrieved node info for id: " + data.id);
+          var nodeDom = selectedNode.find('#node-kademlia-table');
+          //console.log(d);
+          nodeDom.html(classThis.formatNodeHTML(d[0]));
+          nodeDom.removeClass("stale");
+        },
+        function(e){
+          console.log("Error retrieving node info for id: " + data.id);
+          console.log(e);
+        }
+    );
+
+  }
+
+  formatNodeHTML(str) {
+    return str.replace(/\n/g,"<br/>");
+  }
+
+  nodeShortLabel(id) {
+    return id.substr(0,8);
   }
 }
 
@@ -32,7 +59,7 @@ class P2Pd3 {
     this.graphLinks = []
     this.graphMsgs = []
 
-    this.nodeRadius = 8;
+    this.nodeRadius = 16;
 
     this.color = d3.scaleOrdinal(d3.schemeCategory20);
 
@@ -78,16 +105,18 @@ class P2Pd3 {
 
     var simulation = this.simulation = d3.forceSimulation()
         .force("link", d3.forceLink().id(function(d) { return d.id; }))
-        .force("charge", d3.forceManyBody())
+        .force("charge", d3.forceManyBody(-1))
         .force("center", d3.forceCenter(this.width / 2, this.height / 2))
         .alphaDecay(0)
         .alphaMin(0);     
 
     this.graphLinks = links;
     this.link =this.addLinks(links);
+    console.log(this.link);
 
     this.graphNodes = nodes;  
     this.node = this.addNodes(nodes);
+    console.log(this.node);
 
     simulation
         .nodes(this.graphNodes)
@@ -117,7 +146,6 @@ class P2Pd3 {
             //select
             d3.select(this).classed("selected",true);
             self.sidebar.updateSidebarSelectedNode(d);
-
         })
         .call(d3.drag()
             .on("start", function(d){ self.dragstarted(self.simulation, d); } )
@@ -160,9 +188,9 @@ class P2Pd3 {
     this.simulation.nodes(this.graphNodes);            
     this.simulation.force("link").links(this.graphLinks);
 
-    // this.simulation.force("center", d3.forceCenter(300, 200));
+    this.simulation.force("center", d3.forceCenter(this.width/2, this.height/2));
 
-    this.simulation.alpha(1).restart();
+    this.simulation.alpha(0.1).restart();
 
   }
 
@@ -175,9 +203,26 @@ class P2Pd3 {
     this.node = this.node
                     .enter()
                     .append("circle")
+        .attr("r", this.nodeRadius)
+        .attr("fill", function(d) { return self.color(d.group); })
+        .on("click", function(d) {
+            //deselect
+            self.node.classed("selected", function(p) { return p.selected =  p.previouslySelected = false; })
+            //select
+            d3.select(this).classed("selected",true);
+            self.sidebar.updateSidebarSelectedNode(d);
+
+        })
+        .call(d3.drag()
+            .on("start", function(d){ self.dragstarted(self.simulation, d); } )
+            .on("drag", function(d){ self.dragged(d); } )
+            .on("end", function(d){ self.dragended(self.simulation, d); } ))  
+            //.on("end", function(d){ self.dragended(self.simulation, d); } ));   
+/*
                     .attr("fill", function(d) { return d3.scaleOrdinal(d3.schemeCategory20)(d.group) })
                     .attr("r", 5)
                     .attr("x",500)
+*/
                     // .on("click", function(d) {
                     //     alert('test')
                     //     // if (d3.event.defaultPrevented) return;

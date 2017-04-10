@@ -10,15 +10,6 @@
     <script src="js/visuals.js"></script>
     <script src="js/network.js"></script>
     
-    <script>
-    $(document).ready(function() {
-			console.log("loaded");
-      $('#start-visualisation').on('click',function(){ 
-        initializeServer("0"); 
-      });
-	  });
-    </script>
-    
     <link rel="stylesheet" href="d3.css">
     
   </head>
@@ -28,8 +19,27 @@
       <div id="sidebar" class=sidebar>
         <div id="selected-node">
           <div class="actions">
-            <button class="inline" id="start-visualisation">Start New Visualisation</button>
-            <div class="inline elapsed">Time elapsed: <span id="time-elapsed"></span></div>
+            <div class="action-btn-wrapper">
+              <button class="action-btn inline" id="play"><img width="30" src="./img/play.png"/></button>
+              <div class="icontext">Start visualization</div>
+            </div>
+            <div class="action-btn-wrapper">
+              <button class="action-btn inline" id="pause"><img width="30" src="./img/pause.png"/></button>
+              <div class="icontext">Pause visualization</div>
+            </div>
+            <div class="action-btn-spacer"></div>
+            <div class="action-btn-wrapper">
+              <button class="action-btn inline" id="snapshot"><img width="30" src="./img/snapshot.png"/></button>
+              <div class="icontext">Take a snapshot</div>
+            </div>
+            <div class="action-btn-wrapper">
+              <button class="action-btn inline" id="restore"><img width="30" src="./img/restore.png"/></button>
+              <div class="icontext">Restore snapshot</div>
+            </div>
+            <div class="inline elapsed">Time elapsed: <span id="time-elapsed">00:00:00</span></div>
+          </div>
+          <div class="actions">
+            <input type="range">
           </div>
             <div class="counts">
               <h3>Nodes</h1>
@@ -63,39 +73,23 @@
               </table>
             </div>
 
-          <div class="node-selected">
+          <div class="node-bar">
             <div class="node-info">
               <h3>Node Information</h1>
-              <ul>
-                <li> ID: <span class="node-id"></span> </li>
-                <li> Database Size: <span class="node-balance"></span> </li>
-              </ul>            
-
-              <pre id="kamemlia-text-table" class="fixed-width"> ___  __    ________  ________     
-|\  \|\  \ |\   __  \|\   ___ \    
-\ \  \/  /|\ \  \|\  \ \  \_|\ \   
- \ \   ___  \ \   __  \ \  \ \\ \  
-  \ \  \\ \  \ \  \ \  \ \  \_\\ \ 
-   \ \__\\ \__\ \__\ \__\ \_______\
-    \|__| \|__|\|__|\|__|\|_______|
-                                   
-                                   
-                                   
-</pre>
-
-<!--               <table class="node-kademlia-table">
-                <thead>
-                  <td>Id</td>
-                  <td>IP:Port</td>
-                  <td>Distance</td>
-                </thead>
-                <tbody>
-                  
-                </tbody>
-              </table> -->
+              <br/>ID: <span id="node-id"></span> 
+              <br/>Index: <span id="node-index"></span> 
+              <pre id="node-kademlia-table" class="kademlia-info"></pre>              
             </div>
           </div>
         </div>
+      </div>
+      <div id="error-messages">
+        Oooops - error connecting to backend!
+        <br/>
+        <div id="error-reason">
+        </div>
+      </div>
+      <div id="status-messages">
       </div>
       <svg id="network-visualisation" width="780" height="780"></svg>
     </div>
