@@ -248,3 +248,7 @@ input[type=range]:focus::-ms-fill-upper {
 .stale {
   opacity: 0.4;
 }
+
+.new-node {
+  fill: green;
+}

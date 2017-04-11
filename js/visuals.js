@@ -60,14 +60,13 @@ class P2Pd3 {
     this.graphMsgs = []
 
     this.nodeRadius = 16;
-
     this.color = d3.scaleOrdinal(d3.schemeCategory20);
-
     this.sidebar = new P2Pd3Sidebar('#sidebar');
   }
 
   // increment callback function during simulation
   ticked(link,node) {
+    var self = this;
     link
         .attr("x1", function(d) { return d.source.x; })
         .attr("y1", function(d) { return d.source.y; })
@@ -75,8 +74,10 @@ class P2Pd3 {
         .attr("y2", function(d) { return d.target.y; });
 
     node
-        .attr("cx", function(d) { return d.x; })
-        .attr("cy", function(d) { return d.y; });
+        .attr("cx", function(d) { return d.x = Math.max(self.nodeRadius, Math.min(self.width - self.nodeRadius, d.x)); })
+        //.attr("cx", function(d) { return d.x; })
+        //.attr("cy", function(d) { return d.y; });
+        .attr("cy", function(d) { return d.y = Math.max(self.nodeRadius, Math.min(self.height - self.nodeRadius, d.y)) });
   }
 
   // event callbacks
@@ -105,17 +106,17 @@ class P2Pd3 {
 
     var simulation = this.simulation = d3.forceSimulation()
         .force("link", d3.forceLink().id(function(d) { return d.id; }))
-        .force("charge", d3.forceManyBody(-1))
+        .force("charge", d3.forceManyBody(-10))
         .force("center", d3.forceCenter(this.width / 2, this.height / 2))
         .alphaDecay(0)
         .alphaMin(0);     
 
     this.graphLinks = links;
-    this.link =this.addLinks(links);
+    this.addLinks(links);
     console.log(this.link);
 
     this.graphNodes = nodes;  
-    this.node = this.addNodes(nodes);
+    this.addNodes(nodes);
     console.log(this.node);
 
     simulation
@@ -124,7 +125,7 @@ class P2Pd3 {
 
     simulation.force("link")
         .links(this.graphLinks)
-        .distance(function(l,i){return 30;});
+        .distance(function(l,i){return 80;});
 
     this.node
         .attr("cx", function(d) { return d.x; })
@@ -174,104 +175,98 @@ class P2Pd3 {
 	
   	this.updatecount++;
 	
-    this.link = this.appendLinks(newLinks);
-
-    this.node = this.appendNodes(newNodes);
-
-    this.node = this.removeNodes(removeNodes);
-
-    this.link = this.removeLinks(removeLinks);
+    //d3.selectAll("circle").classed("new-node", false);
+    this.appendNodes(newNodes);
+    this.removeNodes(removeNodes);
+    this.appendLinks(newLinks);
+    this.removeLinks(removeLinks);
     
     this.msg = this.triggerMsgs(triggerMsgs);
 
-    // // Update and restart the simulation.
-    this.simulation.nodes(this.graphNodes);            
-    this.simulation.force("link").links(this.graphLinks);
-
-    this.simulation.force("center", d3.forceCenter(this.width/2, this.height/2));
-
-    this.simulation.alpha(0.1).restart();
+    this.restartSimulation();
 
   }
 
-  appendNodes(nodes){
+  restartSimulation() {
+    // // Update and restart the simulation.
     var self = this;
-    for (var i = nodes.length - 1; i >= 0; i--) {
-     this.graphNodes.push(nodes[i]); 
-    }
+    // Apply the general update pattern to the nodes.
     this.node = this.node.data(this.graphNodes, function(d) { return d.id;});
+    this.node.exit().remove();
     this.node = this.node
                     .enter()
                     .append("circle")
-        .attr("r", this.nodeRadius)
-        .attr("fill", function(d) { return self.color(d.group); })
-        .on("click", function(d) {
-            //deselect
-            self.node.classed("selected", function(p) { return p.selected =  p.previouslySelected = false; })
-            //select
-            d3.select(this).classed("selected",true);
-            self.sidebar.updateSidebarSelectedNode(d);
+                    .attr("r", this.nodeRadius)
+                    //.attr("class", "new-node")
+                    .attr("fill", function(d) { return self.color(100); })
+                    .on("click", function(d) {
+                        //deselect
+                        self.node.classed("selected", function(p) { return p.selected =  p.previouslySelected = false; })
+                        //select
+                        d3.select(this).classed("selected",true);
+                        self.sidebar.updateSidebarSelectedNode(d);
 
-        })
-        .call(d3.drag()
-            .on("start", function(d){ self.dragstarted(self.simulation, d); } )
-            .on("drag", function(d){ self.dragged(d); } )
-            .on("end", function(d){ self.dragended(self.simulation, d); } ))  
-            //.on("end", function(d){ self.dragended(self.simulation, d); } ));   
-/*
-                    .attr("fill", function(d) { return d3.scaleOrdinal(d3.schemeCategory20)(d.group) })
-                    .attr("r", 5)
-                    .attr("x",500)
-*/
-                    // .on("click", function(d) {
-                    //     alert('test')
-                    //     // if (d3.event.defaultPrevented) return;
-
-                    //     // if (!shiftKey) {
-                    //     //     //if the shift key isn't down, unselect everything
-                    //     //     node.classed("selected", function(p) { return p.selected =  p.previouslySelected = false; })
-                    //     // }
-
-                    //     // // always select this node
-                    //     // d3.select(this).classed("selected", d.selected = !d.previouslySelected);
-                    // })
-                    // .call(d3.drag()
-                    //   .on("start", function(d){ self.dragstarted(self.simulation, d); } )
-                    //   .on("drag", function(d){ self.dragged(d); } )
-                    //   .on("end", function(d){ self.dragended(self.simulation, d); } ))
+                    })
+                    .call(d3.drag()
+                        .on("start", function(d){ self.dragstarted(self.simulation, d); } )
+                        .on("drag", function(d){ self.dragged(d); } )
+                        .on("end", function(d){ self.dragended(self.simulation, d); } ))  
                     .merge(this.node);
-
-    return this.node;
-  }
-
-  removeNodes(nodes){
-    this.graphNodes = this.graphNodes.filter(function(n){ return nodes.indexOf(n) < 0; })
-    this.node = this.node.data(this.graphNodes, function(d) { return d.id;});
-    this.node.exit().remove();
-    return this.node;
-  }
-
-  appendLinks(links){
-
-    this.graphLinks = this.graphLinks.concat(links);
 
     // Apply the general update pattern to the links.
     this.link = this.link.data(this.graphLinks);
-
+    this.link.exit().remove();
     // add new links
     this.link = this.link.enter().append("line")
 				.attr("stroke", "#808080")
 				.attr("stroke-width", "1.0")
 				.merge(this.link);
-    
-    return this.link;
+
+
+    this.simulation.nodes(this.graphNodes);            
+    this.simulation.force("link").links(this.graphLinks);
+    this.simulation.force("center", d3.forceCenter(this.width/2, this.height/2));
+    this.simulation.alpha(0.1).restart();
+
+  }
+
+  appendNodes(nodes){
+    this.graphNodes = this.graphNodes.concat(nodes);
+  }
+
+  removeNodes(nodes){
+    if (!nodes.length) { return }
+
+    this.graphNodes = this.graphNodes.filter(function(n){ 
+        var contained = false
+        for (var k=0; k<nodes.length; k++) {
+          if (n.id == nodes[k].id) {
+            contained = true;
+            continue;
+          } 
+        }
+        return contained == false ; 
+    });
+    //this.graphNodes = this.graphNodes.filter(function(n){ return nodes.indexOf(n) < 0; })
+  }
+
+  appendLinks(links){
+    this.graphLinks = this.graphLinks.concat(links);
   }
 
   removeLinks(links){
-    this.graphLinks = this.graphLinks.filter(function(n){ return links.indexOf(n) < 0; })
-    this.link = this.link.data(this.graphLinks);
-    this.link.exit().remove();
-    return this.link;
+    if (!links.length) { return }
+    //this.graphLinks = this.graphLinks.filter(function(n){ return links.indexOf(n) < 0; })
+    this.graphLinks= this.graphLinks.filter(function(n){ 
+        var contained = false
+        for (var k=0; k<links.length; k++) {
+          if (n.id == links[k].id) {
+            contained = true;
+            continue;
+          } 
+        }
+        return contained == false ; 
+    })
   }
   
 	triggerMsgs(msgs){
