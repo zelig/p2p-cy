@@ -128,30 +128,24 @@ function getGraphLinks(arr) {
 }
 
 function initializeVisualisationWithClass(networkname_){
-
-  console.log("Initializing visualization");
-  var self = this;
-
   this.visualisation = window.visualisation = new P2Pd3(d3.select("svg"));
-
   setupEventStream();
 };
 
 
 function updateVisualisationWithClass(graph) {
-
   var self = this;
 
   console.log("Updating visualization with new graph");
 
-  //console.log(graph);
+  console.log(graph);
   //console.log($(graph.add));
   //console.log($(graph.remove));
   $('#node-kademlia-table').addClass("stale");
   //new nodes
   var newNodes = getGraphNodes($(graph.add))
 
-  console.log(newNodes);
+  //console.log(newNodes);
       
   upnodes += newNodes.length;
   $("#nodes-up-count").text(upnodes);
@@ -159,7 +153,7 @@ function updateVisualisationWithClass(graph) {
 
   //new connections 
   var newLinks = getGraphLinks($(graph.add))
-  console.log(newLinks);
+  //console.log(newLinks);
 
   uplinks += newLinks.length;
   $("#edges-up-count").text(uplinks);
@@ -167,7 +161,7 @@ function updateVisualisationWithClass(graph) {
 
   //down nodes
   var removeNodes = getGraphNodes($(graph.remove))
-  console.log(removeNodes);
+  //console.log(removeNodes);
 
   upnodes -= removeNodes.length;
   $("#nodes-up-count").text(upnodes);
@@ -176,7 +170,7 @@ function updateVisualisationWithClass(graph) {
   //down connections 
   var removeLinks = getGraphLinks($(graph.remove))
 
-  console.log(removeLinks);
+  //console.log(removeLinks);
 
   uplinks -= removeLinks.length;
   $("#edges-up-count").text(uplinks);

@@ -50,10 +50,9 @@ class P2Pd3 {
 
   constructor(svg) {
 	  this.updatecount = 0;
-    this.svg = svg;
-
     this.width = svg.attr("width");
     this.height = svg.attr("height");
+    this.svg = svg;
 
     this.graphNodes = [];
     this.graphLinks = [];
@@ -131,24 +130,24 @@ class P2Pd3 {
 
 
   setupNodes() {
-    var self = this;
     this.nodeCollection = this.svg.append("g")
         .attr("class", "nodes")
-        .selectAll("circle");
+        .attr("stroke", "#fff").attr("stroke-width", 1.5)
+        .selectAll(".node");
   }
 
   setupLinks(){
     this.linkCollection = this.svg.append("g")
         .attr("class", "links")
-        .selectAll("line");
+        .selectAll(".link");
   }
 
 
   updateVisualisation(newNodes,newLinks,removeNodes,removeLinks,triggerMsgs) {
-
     var self = this;
 	
   	this.updatecount++;
+    this.nodesChanged = false;
 	
     this.appendNodes(newNodes);
     this.removeNodes(removeNodes);
@@ -168,54 +167,58 @@ class P2Pd3 {
     // Update and restart the simulation.
     var self = this;
     // Apply the general update pattern to the nodes.
-    this.nodeCollection = this.nodeCollection.data(this.graphNodes);
-    // Remove all old nodes
-    this.nodeCollection.exit().remove();
-    // Apply class "existing-node" to all existing nodes
-    this.nodeCollection.attr("class","existing-node");
-    // Apply to all new nodes (enter selection)
-    this.nodeCollection = this.nodeCollection
-                  .enter()
-                  .append("circle")
-                  .attr("r", this.nodeRadius)
-                  .attr("class", "new-node")
-                  .attr("fill", function(d) { return self.color(100); })
-                  .on("click", function(d) {
-                      //deselect
-                      self.nodeCollection.classed("selected", function(p) { return p.selected =  p.previouslySelected = false; })
-                      //select
-                      d3.select(this).classed("selected",true);
-                      self.sidebar.updateSidebarSelectedNode(d);
+    if (this.nodesChanged) {
+      this.nodeCollection = this.nodeCollection.data(this.graphNodes, function(d) { return d.id;});
+      // Apply class "existing-node" to all existing nodes
+      this.nodeCollection.attr("fill","#ae81ff");
+      // Remove all old nodes
+      this.nodeCollection.exit().remove();
+      // Apply to all new nodes (enter selection)
+      this.nodeCollection = this.nodeCollection
+                    .enter()
+                    .append("circle")
+                    .attr("fill", "#46bc99")
+                    .attr("r", this.nodeRadius)
+                    .on("click", function(d) {
+                        //deselect
+                        self.nodeCollection.classed("selected", function(p) { return p.selected =  p.previouslySelected = false; })
+                        //select
+                        d3.select(this).classed("selected",true);
+                        self.sidebar.updateSidebarSelectedNode(d);
 
-                  })
-                  .call(d3.drag()
-                      .on("start", function(d){ self.dragstarted(self.simulation, d); } )
-                      .on("drag", function(d){ self.dragged(d); } )
-                      .on("end", function(d){ self.dragended(self.simulation, d); } ))  
-                  .merge(this.nodeCollection);
+                    })
+                    .call(d3.drag()
+                        .on("start", function(d){ self.dragstarted(self.simulation, d); } )
+                        .on("drag", function(d){ self.dragged(d); } )
+                        .on("end", function(d){ self.dragended(self.simulation, d); } ))  
+                    .merge(this.nodeCollection);
+    }
 
-
-    // add new links
-    // Apply the general update pattern to the links.
-    this.linkCollection = this.linkCollection.data(this.graphLinks);
-    this.linkCollection.exit().remove();
-    this.linkCollection = this.linkCollection
-        .enter()
-        .append("line")
-				.attr("stroke", "#808080")
-				.attr("stroke-width", "1.0")
-				.merge(this.linkCollection);
+    if (this.linksChanged) {
+      // Apply the general update pattern to the links.
+      this.linkCollection = this.linkCollection.data(this.graphLinks);
+      this.linkCollection.exit().remove();
+      this.linkCollection = this.linkCollection
+          .enter()
+          .append("line")
+          .attr("stroke", "#808080")
+          .attr("stroke-width", "1.5")
+          .merge(this.linkCollection);
+    }
 
 
     this.simulation.nodes(this.graphNodes);            
     this.simulation.force("link").links(this.graphLinks);
     this.simulation.force("center", d3.forceCenter(self.width/2, self.height/2));
-    this.simulation.alpha(0.1).restart();
+    this.simulation.alpha(1).restart();
 
   }
 
   appendNodes(nodes){
+    if (!nodes.length) { return }
+
     this.graphNodes = this.graphNodes.concat(nodes);
+    this.nodesChanged = true;
   }
 
   removeNodes(nodes){
@@ -231,11 +234,15 @@ class P2Pd3 {
         }
         return contained == false ; 
     });
+    this.nodesChanged = true;
     //this.graphNodes = this.graphNodes.filter(function(n){ return nodes.indexOf(n) < 0; })
   }
 
   appendLinks(links){
+    if (!links.length) { return }
+
     this.graphLinks = this.graphLinks.concat(links);
+    this.linksChanged = true;
   }
 
   removeLinks(links){
@@ -250,7 +257,8 @@ class P2Pd3 {
           } 
         }
         return contained == false ; 
-    })
+    });
+    this.linksChanged = true;
   }
   
 	triggerMsgs(msgs){
