@@ -132,35 +132,9 @@ function initializeVisualisationWithClass(networkname_){
   console.log("Initializing visualization");
   var self = this;
 
-  this.visualisation
-  = window.visualisation
-  = new P2Pd3(d3.select("svg"));
+  this.visualisation = window.visualisation = new P2Pd3(d3.select("svg"));
 
-  $.get(BACKEND_URL + '/' + networkname_ + "/").then(
-    function(graph){
-      console.log("Received graph data from backend");
-      //console.log(graph.add);
-      self.graphNodes = getGraphNodes($(graph.add));
-      //console.log(self.graphNodes);
-
-      upnodes = self.graphNodes.length;
-      $("#nodes-up-count").text(upnodes);
-
-      self.graphLinks = getGraphLinks($(graph.add))
-
-      //console.log(self.graphLinks);
-      
-      uplinks = self.graphLinks.length;
-      $("#edges-up-count").text(uplinks);
-
-      self.visualisation.initializeVisualisation(self.graphNodes,self.graphLinks);
-
-      setupEventStream();
-    },
-    function(e) { 
-      console.log("failed getting graph data from backend; can't initialize visualization");
-      console.log(e); 
-    })
+  setupEventStream();
 };
 
 

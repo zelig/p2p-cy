@@ -249,6 +249,15 @@ input[type=range]:focus::-ms-fill-upper {
   opacity: 0.4;
 }
 
+.nodes {
+}
+
 .new-node {
   fill: green;
+  opacity: 0.5;
+  transition: opacity 1s ease-out;
+}
+
+.existing-node {
+  fill: blue;
 }

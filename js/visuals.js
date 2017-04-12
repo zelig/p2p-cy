@@ -55,9 +55,9 @@ class P2Pd3 {
     this.width = svg.attr("width");
     this.height = svg.attr("height");
 
-    this.graphNodes = []
-    this.graphLinks = []
-    this.graphMsgs = []
+    this.graphNodes = [];
+    this.graphLinks = [];
+    this.graphMsgs = [];
 
     this.nodeRadius = 16;
     this.color = d3.scaleOrdinal(d3.schemeCategory20);
@@ -82,7 +82,6 @@ class P2Pd3 {
 
   // event callbacks
   dragstarted(simulation,d) {
-    console.log(d.id)
     if (!d3.event.active) simulation.alphaTarget(0.3).restart();
     d.fx = d.x;
     d.fy = d.y;
@@ -100,82 +99,57 @@ class P2Pd3 {
   } 
   // end event callbacks
 
-  initializeVisualisation(nodes,links) {
+
+
+  initialize() {
+
+    if (this.initialized) {
+      return;
+    }
 
     var self = this;
 
-    var simulation = this.simulation = d3.forceSimulation()
+    var simulation = this.simulation = d3.forceSimulation(this.graphNodes)
         .force("link", d3.forceLink().id(function(d) { return d.id; }))
         .force("charge", d3.forceManyBody(-10))
-        .force("center", d3.forceCenter(this.width / 2, this.height / 2))
+        .force("center", d3.forceCenter(self.width / 2, self.height / 2))
+        //.force("x", d3.forceX())
+        //.force("y", d3.forceY())
         .alphaDecay(0)
-        .alphaMin(0);     
+        .alphaMin(0)     
+        .on("tick", function(){ self.ticked(self.linkCollection, self.nodeCollection) });
 
-    this.graphLinks = links;
-    this.addLinks(links);
-    console.log(this.link);
-
-    this.graphNodes = nodes;  
-    this.addNodes(nodes);
-    console.log(this.node);
-
-    simulation
-        .nodes(this.graphNodes)
-        .on("tick", function(){ self.ticked(self.link, self.node) });
+    this.setupNodes();
+    this.setupLinks();
 
     simulation.force("link")
         .links(this.graphLinks)
         .distance(function(l,i){return 80;});
 
-    this.node
-        .attr("cx", function(d) { return d.x; })
-        .attr("cy", function(d) { return d.y; });
-    }
+    this.initialized = true;
+  }
 
-  addNodes(nodes){
+
+  setupNodes() {
     var self = this;
-    this.node = this.svg.append("g")
+    this.nodeCollection = this.svg.append("g")
         .attr("class", "nodes")
-        .selectAll("circle")
-        .data(nodes)
-        .enter().append("circle")
-        .attr("r", this.nodeRadius)
-        .attr("fill", function(d) { return self.color(d.group); })
-        .on("click", function(d) {
-            //deselect
-            self.node.classed("selected", function(p) { return p.selected =  p.previouslySelected = false; })
-            //select
-            d3.select(this).classed("selected",true);
-            self.sidebar.updateSidebarSelectedNode(d);
-        })
-        .call(d3.drag()
-            .on("start", function(d){ self.dragstarted(self.simulation, d); } )
-            .on("drag", function(d){ self.dragged(d); } )
-            .on("end", function(d){ self.dragended(self.simulation, d); } ));   
-
-    return this.node;
+        .selectAll("circle");
   }
 
-  addLinks(links){
-    this.link = this.svg.append("g")
+  setupLinks(){
+    this.linkCollection = this.svg.append("g")
         .attr("class", "links")
-        .selectAll("line")
-        .data(links)
-        .enter().append("line")
-        .attr("stroke", "#808080")
-        //left as an example of how to set an attribute using per-edge data
-        //.attr("stroke-width", function(d) { return Math.sqrt(d.value); });
-        .attr("stroke-width", "1.0");
-    return this.link;
+        .selectAll("line");
   }
+
 
   updateVisualisation(newNodes,newLinks,removeNodes,removeLinks,triggerMsgs) {
-	
+
     var self = this;
 	
   	this.updatecount++;
 	
-    //d3.selectAll("circle").classed("new-node", false);
     this.appendNodes(newNodes);
     this.removeNodes(removeNodes);
     this.appendLinks(newLinks);
@@ -183,49 +157,59 @@ class P2Pd3 {
     
     this.msg = this.triggerMsgs(triggerMsgs);
 
-    this.restartSimulation();
+    if (!this.initialized) {
+      this.initialize();
+    }
 
+    this.restartSimulation();
   }
 
   restartSimulation() {
-    // // Update and restart the simulation.
+    // Update and restart the simulation.
     var self = this;
     // Apply the general update pattern to the nodes.
-    this.node = this.node.data(this.graphNodes, function(d) { return d.id;});
-    this.node.exit().remove();
-    this.node = this.node
-                    .enter()
-                    .append("circle")
-                    .attr("r", this.nodeRadius)
-                    //.attr("class", "new-node")
-                    .attr("fill", function(d) { return self.color(100); })
-                    .on("click", function(d) {
-                        //deselect
-                        self.node.classed("selected", function(p) { return p.selected =  p.previouslySelected = false; })
-                        //select
-                        d3.select(this).classed("selected",true);
-                        self.sidebar.updateSidebarSelectedNode(d);
+    this.nodeCollection = this.nodeCollection.data(this.graphNodes);
+    // Remove all old nodes
+    this.nodeCollection.exit().remove();
+    // Apply class "existing-node" to all existing nodes
+    this.nodeCollection.attr("class","existing-node");
+    // Apply to all new nodes (enter selection)
+    this.nodeCollection = this.nodeCollection
+                  .enter()
+                  .append("circle")
+                  .attr("r", this.nodeRadius)
+                  .attr("class", "new-node")
+                  .attr("fill", function(d) { return self.color(100); })
+                  .on("click", function(d) {
+                      //deselect
+                      self.nodeCollection.classed("selected", function(p) { return p.selected =  p.previouslySelected = false; })
+                      //select
+                      d3.select(this).classed("selected",true);
+                      self.sidebar.updateSidebarSelectedNode(d);
 
-                    })
-                    .call(d3.drag()
-                        .on("start", function(d){ self.dragstarted(self.simulation, d); } )
-                        .on("drag", function(d){ self.dragged(d); } )
-                        .on("end", function(d){ self.dragended(self.simulation, d); } ))  
-                    .merge(this.node);
+                  })
+                  .call(d3.drag()
+                      .on("start", function(d){ self.dragstarted(self.simulation, d); } )
+                      .on("drag", function(d){ self.dragged(d); } )
+                      .on("end", function(d){ self.dragended(self.simulation, d); } ))  
+                  .merge(this.nodeCollection);
 
-    // Apply the general update pattern to the links.
-    this.link = this.link.data(this.graphLinks);
-    this.link.exit().remove();
+
     // add new links
-    this.link = this.link.enter().append("line")
+    // Apply the general update pattern to the links.
+    this.linkCollection = this.linkCollection.data(this.graphLinks);
+    this.linkCollection.exit().remove();
+    this.linkCollection = this.linkCollection
+        .enter()
+        .append("line")
 				.attr("stroke", "#808080")
 				.attr("stroke-width", "1.0")
-				.merge(this.link);
+				.merge(this.linkCollection);
 
 
     this.simulation.nodes(this.graphNodes);            
     this.simulation.force("link").links(this.graphLinks);
-    this.simulation.force("center", d3.forceCenter(this.width/2, this.height/2));
+    this.simulation.force("center", d3.forceCenter(self.width/2, self.height/2));
     this.simulation.alpha(0.1).restart();
 
   }
