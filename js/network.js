@@ -138,7 +138,7 @@ function updateVisualisationWithClass(graph) {
 
   console.log("Updating visualization with new graph");
 
-  console.log(graph);
+  //console.log(graph);
   //console.log($(graph.add));
   //console.log($(graph.remove));
   $('#node-kademlia-table').addClass("stale");

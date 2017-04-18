@@ -3,11 +3,18 @@ class P2Pd3Sidebar {
     this.sidebar = $(selector)
   }
   updateSidebarSelectedNode(data) {
+    //reset highlighted links if any
+    visualisation.linkCollection
+      .attr("stroke", "#808080")
+      .attr("stroke-width", "1.5")
+      .classed("stale",false);
+
     var selectedNode = $(this.sidebar).find('#selected-node');
     $(".node-bar").show();
     selectedNode.addClass('node-selected');
-    selectedNode.find('#node-id').html(this.nodeShortLabel(data.id));
+    selectedNode.find('#node-id').html(nodeShortLabel(data.id));
     selectedNode.find('#node-index').html(data.index);
+    this.selectConnections(data.id);
     //selectedNode.find('.node-balance').html(data.balance);
 
     var payload = [];
@@ -34,20 +41,38 @@ class P2Pd3Sidebar {
           console.log(e);
         }
     );
-
   }
 
   formatNodeHTML(str) {
     return str.replace(/\n/g,"<br/>");
   }
 
-  nodeShortLabel(id) {
-    return id.substr(0,8);
+  selectConnections(id) {
+    //set node links to "foreground" (no opacity)
+    var conns         = visualisation.nodesById[nodeShortLabel(id)];
+    visualisation.linkCollection.classed("stale", true);
+    var connSelection = visualisation.linkCollection.filter(function(n) {
+      return conns.indexOf(n.id) > -1;
+    });
+    connSelection
+          .attr("stroke", "#f69047")
+          .attr("stroke-width", 2.5)
+          .classed("stale", false);
+
+    //set node link targets to "foreground" (no opacity)
+    visualisation.nodeCollection.classed("stale", true);
+    var targets       = [];
+    for (var k=0;k<conns.length;k++) {
+      targets.push(visualisation.connsById[conns[k]].target);
+    }
+    var nodesSelection = visualisation.nodeCollection.filter(function(n) {
+      return targets.indexOf(n.id) > -1;
+    });
+    nodesSelection.classed("stale", false);
   }
 }
 
 class P2Pd3 {
-
   constructor(svg) {
 	  this.updatecount = 0;
     this.width = svg.attr("width");
@@ -57,10 +82,17 @@ class P2Pd3 {
     this.graphNodes = [];
     this.graphLinks = [];
     this.graphMsgs = [];
+    //for convenience; this may (or should) be "merged" with graphNodes
+    this.nodesById = {};
+    this.connsById = {};
 
     this.nodeRadius = 16;
     this.color = d3.scaleOrdinal(d3.schemeCategory20);
     this.sidebar = new P2Pd3Sidebar('#sidebar');
+  }
+
+  linkDistance(d) {
+    return Math.floor(Math.random() * 11) + 80;
   }
 
   // increment callback function during simulation
@@ -101,11 +133,9 @@ class P2Pd3 {
 
 
   initialize() {
-
     if (this.initialized) {
       return;
     }
-
     var self = this;
 
     var simulation = this.simulation = d3.forceSimulation(this.graphNodes)
@@ -123,7 +153,8 @@ class P2Pd3 {
 
     simulation.force("link")
         .links(this.graphLinks)
-        .distance(function(l,i){return 80;});
+        //.distance(function(l,i){return 80;});
+        .distance(self.linkDistance);
 
     this.initialized = true;
   }
@@ -148,6 +179,7 @@ class P2Pd3 {
 	
   	this.updatecount++;
     this.nodesChanged = false;
+    this.linksChanged = false;
 	
     this.appendNodes(newNodes);
     this.removeNodes(removeNodes);
@@ -160,6 +192,8 @@ class P2Pd3 {
       this.initialize();
     }
 
+    //console.log(this.graphNodes);
+    //console.log(this.graphLinks);
     this.restartSimulation();
   }
 
@@ -218,36 +252,72 @@ class P2Pd3 {
     if (!nodes.length) { return }
 
     this.graphNodes = this.graphNodes.concat(nodes);
+    for (var i=0; i<nodes.length; i++) {
+      console.log("NEW node: " + nodes[i].id);
+      this.nodesById[nodeShortLabel(nodes[i].id)] = [];
+    }
     this.nodesChanged = true;
   }
 
   removeNodes(nodes){
     if (!nodes.length) { return }
+    var self = this;
 
+    console.log("REMOVE node: " + nodes[0].id);
     this.graphNodes = this.graphNodes.filter(function(n){ 
-        var contained = false
+        var contained = false;
         for (var k=0; k<nodes.length; k++) {
           if (n.id == nodes[k].id) {
             contained = true;
             continue;
           } 
+          //this wouldn't be necessary if the backend behaved deterministically with connections
+          //we need to remove all nodes' connections "manually" in the frontend or we end up
+          //with orphan connections 
+          /*
+          if (self.nodesById[nodes[k].id]) {
+            self.removeNodesLinks(this.nodesById[nodes[k].id]);
+          }
+          */
         }
         return contained == false ; 
     });
     this.nodesChanged = true;
-    //this.graphNodes = this.graphNodes.filter(function(n){ return nodes.indexOf(n) < 0; })
   }
 
   appendLinks(links){
     if (!links.length) { return }
 
     this.graphLinks = this.graphLinks.concat(links);
+    for (var i=0;i<links.length;i++) {
+      var id     = links[i].id;
+      var source = nodeShortLabel(links[i].source);
+      var target = nodeShortLabel(links[i].target);
+      this.nodesById[source].push(id);
+      this.nodesById[target].push(id);
+
+      this.connsById[id] = {};
+      this.connsById[id].target = links[i].target;
+      this.connsById[id].source = links[i].source;
+    }
+    console.log("ADD connection, target: " + target + " - source: " + source);
     this.linksChanged = true;
   }
 
+  removeNodesLinks(id) {
+    var linksToRemove = [];
+    for (var i=0;i<this.nodesById[id].length;i++) {
+      linksToRemove.push({id: this.nodesById[id][i]});
+    }
+    removeLinks(linksToRemove);
+    delete this.nodesById[id];
+  } 
+
   removeLinks(links){
     if (!links.length) { return }
-    //this.graphLinks = this.graphLinks.filter(function(n){ return links.indexOf(n) < 0; })
+
+    var self = this;
+
     this.graphLinks= this.graphLinks.filter(function(n){ 
         var contained = false
         for (var k=0; k<links.length; k++) {
@@ -256,6 +326,7 @@ class P2Pd3 {
             continue;
           } 
         }
+        console.log("REMOVE connection, target: " + links[0].target + " - source: " + links[0].source);
         return contained == false ; 
     });
     this.linksChanged = true;
@@ -298,3 +369,7 @@ function generateUID() {
     return ("0000" + (Math.random()*Math.pow(36,4) << 0).toString(36)).slice(-4)
 }
 
+function  nodeShortLabel(id) {
+    return id;
+    //return id.substr(0,8);
+}
