@@ -43,6 +43,31 @@ class P2Pd3Sidebar {
     );
   }
 
+  updateSidebarCounts(newNodes, newLinks, removeNodes, removeLinks) {
+    //console.log(newNodes);
+    upnodes += newNodes.length;
+    $("#nodes-up-count").text(upnodes);
+    $("#nodes-add-count").text(newNodes.length);
+
+    //console.log(newLinks);
+
+    uplinks += newLinks.length;
+    $("#edges-up-count").text(uplinks);
+    $("#edges-add-count").text(newLinks.length);
+
+    //console.log(removeNodes);
+
+    upnodes -= removeNodes.length;
+    $("#nodes-up-count").text(upnodes);
+    $("#nodes-remove-count").text(removeNodes.length);
+
+    //console.log(removeLinks);
+
+    uplinks -= removeLinks.length;
+    $("#edges-up-count").text(uplinks);
+    $("#edges-remove-count").text(removeLinks.length);
+  }
+
   formatNodeHTML(str) {
     return str.replace(/\n/g,"<br/>");
   }

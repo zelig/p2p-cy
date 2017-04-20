@@ -56,7 +56,6 @@ $(document).ready(function() {
       $('#play').prop("disabled",false);
 
       setupTimemachine();
-
     }
   });
 });
@@ -146,43 +145,17 @@ function updateVisualisationWithClass(graph) {
   console.log("Updating visualization with new graph");
   eventHistory.push({timestamp:$("#time-elapsed").text(), content: graph});
 
-  //console.log(graph);
-  //console.log($(graph.add));
-  //console.log($(graph.remove));
   $('#node-kademlia-table').addClass("stale");
   //new nodes
   var newNodes = getGraphNodes($(graph.add))
-
-  //console.log(newNodes);
-      
-  upnodes += newNodes.length;
-  $("#nodes-up-count").text(upnodes);
-  $("#nodes-add-count").text(newNodes.length);
-
   //new connections 
   var newLinks = getGraphLinks($(graph.add))
-  //console.log(newLinks);
-
-  uplinks += newLinks.length;
-  $("#edges-up-count").text(uplinks);
-  $("#edges-add-count").text(newLinks.length);
-
   //down nodes
   var removeNodes = getGraphNodes($(graph.remove))
-  //console.log(removeNodes);
-
-  upnodes -= removeNodes.length;
-  $("#nodes-up-count").text(upnodes);
-  $("#nodes-remove-count").text(removeNodes.length);
-
   //down connections 
   var removeLinks = getGraphLinks($(graph.remove))
 
-  //console.log(removeLinks);
-
-  uplinks -= removeLinks.length;
-  $("#edges-up-count").text(uplinks);
-  $("#edges-remove-count").text(removeLinks.length);
+  visualisation.sidebar.updateSidebarCounts(newNodes, newLinks, removeNodes, removeLinks); 
 
   var triggerMsgs = $(graph.add)
       .filter(function(i,e){return e.group === 'msgs'})
@@ -198,3 +171,5 @@ function updateVisualisationWithClass(graph) {
 
   self.visualisation.updateVisualisation(newNodes,newLinks,removeNodes,removeLinks,triggerMsgs);
 };
+
+

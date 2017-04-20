@@ -72,13 +72,14 @@ function setupTimemachine() {
   Timemachine.connsById  = $.extend(true, {}, visualisation.connsById);
 
   Timemachine.nodeCollection = Timemachine.svg.selectAll("circle")
-                .on("click", function(d) {
-              //deselect
-              self.nodeCollection.classed("selected", function(p) { return p.selected =  p.previouslySelected = false; })
-              //select
-              d3.select(this).classed("selected",true);
-              self.sidebar.updateSidebarSelectedNode(d);
-; 
+    .on("click", function(d) {
+        //deselect
+        self.nodeCollection.classed("selected", function(p) { return p.selected =  p.previouslySelected = false; });
+        //select
+        d3.select(this).classed("selected",true);
+        self.sidebar.updateSidebarSelectedNode(d);
+    }); 
+
   Timemachine.linkCollection = Timemachine.svg.selectAll("line"); 
 
   currHistoryIndex = eventHistory.length -1;
@@ -105,6 +106,7 @@ TimemachineForward = function(idx) {
   newLinks = getGraphLinks($(content.add));
 
   Timemachine.updateVisualisation(newNodes,newLinks,removeNodes,removeLinks,triggerMsgs); 
+  Timemachine.sidebar.updateSidebarCounts(newNodes, newLinks, removeNodes, removeLinks);
 }
 
 
@@ -125,4 +127,5 @@ TimemachineBackward = function(idx) {
   newLinks = getGraphLinks($(content.remove));
 
   Timemachine.updateVisualisation(newNodes,newLinks,removeNodes,removeLinks,triggerMsgs); 
+  Timemachine.sidebar.updateSidebarCounts(newNodes, newLinks, removeNodes, removeLinks);
 }
