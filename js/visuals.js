@@ -213,23 +213,23 @@ class P2Pd3 {
       this.nodeCollection.exit().remove();
       // Apply to all new nodes (enter selection)
       this.nodeCollection = this.nodeCollection
-                    .enter()
-                    .append("circle")
-                    .attr("fill", "#46bc99")
-                    .attr("r", this.nodeRadius)
-                    .on("click", function(d) {
-                        //deselect
-                        self.nodeCollection.classed("selected", function(p) { return p.selected =  p.previouslySelected = false; })
-                        //select
-                        d3.select(this).classed("selected",true);
-                        self.sidebar.updateSidebarSelectedNode(d);
+          .enter()
+          .append("circle")
+          .attr("fill", "#46bc99")
+          .attr("r", this.nodeRadius)
+          .on("click", function(d) {
+              //deselect
+              self.nodeCollection.classed("selected", function(p) { return p.selected =  p.previouslySelected = false; })
+              //select
+              d3.select(this).classed("selected",true);
+              self.sidebar.updateSidebarSelectedNode(d);
 
-                    })
-                    .call(d3.drag()
-                        .on("start", function(d){ self.dragstarted(self.simulation, d); } )
-                        .on("drag", function(d){ self.dragged(d); } )
-                        .on("end", function(d){ self.dragended(self.simulation, d); } ))  
-                    .merge(this.nodeCollection);
+          })
+          .call(d3.drag()
+              .on("start", function(d){ self.dragstarted(self.simulation, d); } )
+              .on("drag", function(d){ self.dragged(d); } )
+              .on("end", function(d){ self.dragended(self.simulation, d); } ))  
+          .merge(this.nodeCollection);
     }
 
     if (this.linksChanged) {

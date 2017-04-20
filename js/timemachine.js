@@ -60,17 +60,25 @@ var rangeListener = function(timeEvent, fwd) {
 }
 
 function setupTimemachine() {
-  var sim = $("#network-visualisation").clone();
+  var sim = $("#network-visualisation").clone(true, true);
   sim.attr("id", "timemachine-visualisation");
   sim.appendTo("#visualisation-wrapper");
   Timemachine = new P2Pd3(d3.select("#timemachine-visualisation"));
   Timemachine.skipCollectionSetup = true; 
+  Timemachine.sidebar = visualisation.sidebar;; 
   Timemachine.graphNodes = $.extend(true, [], visualisation.graphNodes);
   Timemachine.graphLinks = $.extend(true, [], visualisation.graphLinks);
   Timemachine.nodesById  = $.extend(true, {}, visualisation.nodesById);
   Timemachine.connsById  = $.extend(true, {}, visualisation.connsById);
 
-  Timemachine.nodeCollection = Timemachine.svg.selectAll("circle"); 
+  Timemachine.nodeCollection = Timemachine.svg.selectAll("circle")
+                .on("click", function(d) {
+              //deselect
+              self.nodeCollection.classed("selected", function(p) { return p.selected =  p.previouslySelected = false; })
+              //select
+              d3.select(this).classed("selected",true);
+              self.sidebar.updateSidebarSelectedNode(d);
+; 
   Timemachine.linkCollection = Timemachine.svg.selectAll("line"); 
 
   currHistoryIndex = eventHistory.length -1;
