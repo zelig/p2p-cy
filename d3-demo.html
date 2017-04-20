@@ -9,6 +9,7 @@
     <script src="js/lib/d3.v4.min.js"></script>    
     <script src="js/visuals.js"></script>
     <script src="js/network.js"></script>
+    <script src="js/timemachine.js"></script>
     
     <link rel="stylesheet" href="d3.css">
     
@@ -23,23 +24,27 @@
               <button class="action-btn inline" id="play"><img width="30" src="./img/play.png"/></button>
               <div class="icontext">Start visualization</div>
             </div>
+           <!-- 
             <div class="action-btn-wrapper">
               <button class="action-btn inline" id="pause"><img width="30" src="./img/pause.png"/></button>
               <div class="icontext">Pause visualization</div>
             </div>
+            -->
             <div class="action-btn-spacer"></div>
             <div class="action-btn-wrapper">
-              <button class="action-btn inline" id="snapshot"><img width="30" src="./img/snapshot.png"/></button>
+              <button class="action-btn inline" id="pause"><img width="30" src="./img/snapshot.png"/></button>
               <div class="icontext">Take a snapshot</div>
             </div>
+           <!-- 
             <div class="action-btn-wrapper">
               <button class="action-btn inline" id="restore"><img width="30" src="./img/restore.png"/></button>
               <div class="icontext">Restore snapshot</div>
             </div>
+            -->
             <div class="inline elapsed">Time elapsed: <span id="time-elapsed">00:00:00</span></div>
           </div>
           <div class="actions">
-            <input type="range">
+            <input id="timemachine" style="display:none" type="range">
           </div>
             <div class="counts">
               <h3>Nodes</h1>
@@ -91,7 +96,9 @@
       </div>
       <div id="status-messages">
       </div>
-      <svg id="network-visualisation" width="780" height="780"></svg>
+      <div id="visualisation-wrapper">
+        <svg id="network-visualisation" width="780" height="780"></svg>
+      </div>
     </div>
   </body>
 </html>

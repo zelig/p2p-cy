@@ -86,6 +86,8 @@ class P2Pd3 {
     this.nodesById = {};
     this.connsById = {};
 
+    this.skipCollectionSetup = false;
+
     this.nodeRadius = 16;
     this.color = d3.scaleOrdinal(d3.schemeCategory20);
     this.sidebar = new P2Pd3Sidebar('#sidebar');
@@ -138,7 +140,7 @@ class P2Pd3 {
     }
     var self = this;
 
-    var simulation = this.simulation = d3.forceSimulation(this.graphNodes)
+    var simulation = this.simulation = d3.forceSimulation(self.graphNodes)
         .force("link", d3.forceLink().id(function(d) { return d.id; }))
         .force("charge", d3.forceManyBody(-10))
         .force("center", d3.forceCenter(self.width / 2, self.height / 2))
@@ -148,8 +150,10 @@ class P2Pd3 {
         .alphaMin(0)     
         .on("tick", function(){ self.ticked(self.linkCollection, self.nodeCollection) });
 
-    this.setupNodes();
-    this.setupLinks();
+    if (!this.skipCollectionSetup) {
+      this.setupNodes();
+      this.setupLinks();
+    }
 
     simulation.force("link")
         .links(this.graphLinks)
@@ -202,7 +206,7 @@ class P2Pd3 {
     var self = this;
     // Apply the general update pattern to the nodes.
     if (this.nodesChanged) {
-      this.nodeCollection = this.nodeCollection.data(this.graphNodes, function(d) { return d.id;});
+      this.nodeCollection = this.nodeCollection.data(self.graphNodes);
       // Apply class "existing-node" to all existing nodes
       this.nodeCollection.attr("fill","#ae81ff");
       // Remove all old nodes
@@ -241,8 +245,8 @@ class P2Pd3 {
     }
 
 
-    this.simulation.nodes(this.graphNodes);            
-    this.simulation.force("link").links(this.graphLinks);
+    this.simulation.nodes(self.graphNodes);            
+    this.simulation.force("link").links(self.graphLinks);
     this.simulation.force("center", d3.forceCenter(self.width/2, self.height/2));
     this.simulation.alpha(1).restart();
 
@@ -322,6 +326,13 @@ class P2Pd3 {
         var contained = false
         for (var k=0; k<links.length; k++) {
           if (n.id == links[k].id) {
+          /*
+          if (n.source == links[k].source || 
+              n.source == links[k].target || 
+              n.target == links[k].target ||  
+              n.target == links[k].source)
+            {
+          */
             contained = true;
             continue;
           } 
@@ -370,6 +381,5 @@ function generateUID() {
 }
 
 function  nodeShortLabel(id) {
-    return id;
-    //return id.substr(0,8);
+    return id.substr(0,8);
 }

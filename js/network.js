@@ -7,6 +7,9 @@ var runViz = null;
 var pauseViz = false;
 var networkname = null;
 var eventSource = null;
+var eventHistory = [];
+var currHistoryIndex = 0;
+var timemachine = false;
 var time_elapsed = new Date();
 
 
@@ -47,9 +50,13 @@ $(document).ready(function() {
       eventSource.close();
       $("#status-messages").text("Visualization Paused");
       $("#status-messages").show();
+      $("#timemachine").show();
       pauseViz = true;
       $('#pause').prop("disabled",true);
       $('#play').prop("disabled",false);
+
+      setupTimemachine();
+
     }
   });
 });
@@ -128,7 +135,7 @@ function getGraphLinks(arr) {
 }
 
 function initializeVisualisationWithClass(networkname_){
-  this.visualisation = window.visualisation = new P2Pd3(d3.select("svg"));
+  this.visualisation = window.visualisation = new P2Pd3(d3.select("#network-visualisation"));
   setupEventStream();
 };
 
@@ -137,6 +144,7 @@ function updateVisualisationWithClass(graph) {
   var self = this;
 
   console.log("Updating visualization with new graph");
+  eventHistory.push({timestamp:$("#time-elapsed").text(), content: graph});
 
   //console.log(graph);
   //console.log($(graph.add));
