@@ -147,13 +147,13 @@ function updateVisualisationWithClass(graph) {
 
   $('#node-kademlia-table').addClass("stale");
   //new nodes
-  var newNodes = getGraphNodes($(graph.add))
+  var newNodes = getGraphNodes($(graph.add));
   //new connections 
-  var newLinks = getGraphLinks($(graph.add))
+  var newLinks = getGraphLinks($(graph.add));
   //down nodes
-  var removeNodes = getGraphNodes($(graph.remove))
+  var removeNodes = getGraphNodes($(graph.remove));
   //down connections 
-  var removeLinks = getGraphLinks($(graph.remove))
+  var removeLinks = getGraphLinks($(graph.remove));
 
   visualisation.sidebar.updateSidebarCounts(newNodes, newLinks, removeNodes, removeLinks); 
 

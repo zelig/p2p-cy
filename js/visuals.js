@@ -298,16 +298,15 @@ class P2Pd3 {
         for (var k=0; k<nodes.length; k++) {
           if (n.id == nodes[k].id) {
             contained = true;
-            continue;
+            //continue;
           } 
           //this wouldn't be necessary if the backend behaved deterministically with connections
           //we need to remove all nodes' connections "manually" in the frontend or we end up
           //with orphan connections 
-          /*
-          if (self.nodesById[nodes[k].id]) {
-            self.removeNodesLinks(this.nodesById[nodes[k].id]);
+          var lab = nodeShortLabel(nodes[k].id);
+          if (self.nodesById[lab]) {
+            self.removeNodesLinks(lab);
           }
-          */
         }
         return contained == false ; 
     });
@@ -335,18 +334,23 @@ class P2Pd3 {
 
   removeNodesLinks(id) {
     var linksToRemove = [];
-    for (var i=0;i<this.nodesById[id].length;i++) {
-      linksToRemove.push({id: this.nodesById[id][i]});
-    }
-    removeLinks(linksToRemove);
+    var connList = this.connsById;
+    Object.keys(connList).forEach(function(key,index) {
+      if (nodeShortLabel(connList[key].source) == id ||
+          nodeShortLabel(connList[key].target) == id ) {
+        linksToRemove.push({id: key});
+      }
+    });
+    this.removeLinks(linksToRemove);
     delete this.nodesById[id];
+    //uplinks -= linksToRemove.length;
+    //$("#edges-up-count").text(uplinks);
   } 
 
   removeLinks(links){
     if (!links.length) { return }
 
     var self = this;
-
     this.graphLinks= this.graphLinks.filter(function(n){ 
         var contained = false
         for (var k=0; k<links.length; k++) {
