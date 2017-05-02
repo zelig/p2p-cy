@@ -1,10 +1,11 @@
 class P2Pd3Sidebar {
-  constructor(selector) {
+  constructor(selector, viz) {
     this.sidebar = $(selector)
+    this.visualisation = viz;
   }
   updateSidebarSelectedNode(data) {
     //reset highlighted links if any
-    visualisation.linkCollection
+    this.visualisation.linkCollection
       .attr("stroke", "#808080")
       .attr("stroke-width", "1.5")
       .classed("stale",false);
@@ -63,7 +64,12 @@ class P2Pd3Sidebar {
 
     //console.log(removeLinks);
 
-    uplinks -= removeLinks.length;
+    for (var i=0; i<removeLinks.length; i++) {
+      if (this.visualisation.connsById[removeLinks[i].id]) {
+        uplinks -= removeLinks.length;
+        delete this.visualisation.connsById[removeLinks[i].id];
+      }
+    }
     $("#edges-up-count").text(uplinks);
     $("#edges-remove-count").text(removeLinks.length);
   }
@@ -74,9 +80,9 @@ class P2Pd3Sidebar {
 
   selectConnections(id) {
     //set node links to "foreground" (no opacity)
-    var conns         = visualisation.nodesById[nodeShortLabel(id)];
-    visualisation.linkCollection.classed("stale", true);
-    var connSelection = visualisation.linkCollection.filter(function(n) {
+    var conns         = this.visualisation.nodesById[nodeShortLabel(id)];
+    this.visualisation.linkCollection.classed("stale", true);
+    var connSelection = this.visualisation.linkCollection.filter(function(n) {
       return conns.indexOf(n.id) > -1;
     });
     connSelection
@@ -85,12 +91,12 @@ class P2Pd3Sidebar {
           .classed("stale", false);
 
     //set node link targets to "foreground" (no opacity)
-    visualisation.nodeCollection.classed("stale", true);
+    this.visualisation.nodeCollection.classed("stale", true);
     var targets       = [];
     for (var k=0;k<conns.length;k++) {
-      targets.push(visualisation.connsById[conns[k]].target);
+      targets.push(this.visualisation.connsById[conns[k]].target);
     }
-    var nodesSelection = visualisation.nodeCollection.filter(function(n) {
+    var nodesSelection = this.visualisation.nodeCollection.filter(function(n) {
       return targets.indexOf(n.id) > -1;
     });
     nodesSelection.classed("stale", false);
@@ -115,7 +121,7 @@ class P2Pd3 {
 
     this.nodeRadius = 16;
     this.color = d3.scaleOrdinal(d3.schemeCategory20);
-    this.sidebar = new P2Pd3Sidebar('#sidebar');
+    this.sidebar = new P2Pd3Sidebar('#sidebar', this);
   }
 
   linkDistance(d) {
@@ -305,7 +311,7 @@ class P2Pd3 {
           //with orphan connections 
           var lab = nodeShortLabel(nodes[k].id);
           if (self.nodesById[lab]) {
-            self.removeNodesLinks(lab);
+            //self.removeNodesLinks(lab);
           }
         }
         return contained == false ; 
@@ -321,14 +327,23 @@ class P2Pd3 {
       var id     = links[i].id;
       var source = nodeShortLabel(links[i].source);
       var target = nodeShortLabel(links[i].target);
+      //this should not happen, but it does...
+      //indicates connections arrive before node events
+      //so this is a bit of a hack...TODO on backend
+      if (!this.nodesById[source]) {
+        this.nodesById[source] = [];
+      }
       this.nodesById[source].push(id);
+      if (!this.nodesById[target]) {
+        this.nodesById[target] = [];
+      }
       this.nodesById[target].push(id);
 
       this.connsById[id] = {};
       this.connsById[id].target = links[i].target;
       this.connsById[id].source = links[i].source;
     }
-    console.log("ADD connection, target: " + target + " - source: " + source);
+    console.log("ADD connection, source: " + source+ " - target: " + target );
     this.linksChanged = true;
   }
 
@@ -339,12 +354,15 @@ class P2Pd3 {
       if (nodeShortLabel(connList[key].source) == id ||
           nodeShortLabel(connList[key].target) == id ) {
         linksToRemove.push({id: key});
+        eventHistory.push({timestamp:$("#time-elapsed").text(), content: {add:[], remove:[{id: key}]} });
+        uplinks -= 1;
+        console.log("REMOVE connection, id:" + key);
+        delete connList[key];
       }
     });
+    $("#edges-up-count").text(uplinks);
     this.removeLinks(linksToRemove);
     delete this.nodesById[id];
-    //uplinks -= linksToRemove.length;
-    //$("#edges-up-count").text(uplinks);
   } 
 
   removeLinks(links){
@@ -355,18 +373,10 @@ class P2Pd3 {
         var contained = false
         for (var k=0; k<links.length; k++) {
           if (n.id == links[k].id) {
-          /*
-          if (n.source == links[k].source || 
-              n.source == links[k].target || 
-              n.target == links[k].target ||  
-              n.target == links[k].source)
-            {
-          */
             contained = true;
             continue;
           } 
         }
-        console.log("REMOVE connection, target: " + links[0].target + " - source: " + links[0].source);
         return contained == false ; 
     });
     this.linksChanged = true;

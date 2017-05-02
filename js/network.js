@@ -29,16 +29,22 @@ var uplinks   = 0;
 $(document).ready(function() {
   
   $('#pause').prop("disabled",true);
+  $('#play').prop("disabled",true);
 
+  //click handlers
+  $('#power').on('click',function(){ 
+    initializeServer("0"); 
+    $('#play').prop("disabled",false);
+    $('#power').prop("disabled",true);
+  });
   //click handlers
   $('#play').on('click',function(){ 
     if (pauseViz) {
-      setupEventStream();
       pauseViz = false;
       startTimer();
       $("#status-messages").hide();
     } else {
-      initializeServer("0"); 
+      startViz(); 
     }
     $('#play').prop("disabled",true);
     $('#pause').prop("disabled",false);
@@ -63,7 +69,7 @@ $(document).ready(function() {
 function setupEventStream() {
   eventSource = new EventSource(BACKEND_URL + '/' + networkname + "/");
 
-  eventSource.addEventListener("cyupdate", function(e) {
+  eventSource.addEventListener("simupdate", function(e) {
     updateVisualisationWithClass(JSON.parse(e.data));
   });
 
@@ -72,8 +78,27 @@ function setupEventStream() {
     $("#error-reason").text("Has the backend been shut down?");
     $('#pause').prop("disabled",true);
     $('#play').prop("disabled",true);
+    $('#power').prop("disabled",false);
     clearInterval(clockId);
   }
+}
+
+function startViz(){
+  var opts = {
+    url: BACKEND_URL  + "/" + networkname,
+    type: "PUT",
+    data: {},
+  }
+  $.ajax(opts).then(
+    function(d) {
+      startTimer();
+      setTimeout(function(){
+        initializeVisualisationWithClass(networkname),1000
+      })
+  }, function(e) {
+      $("#error-messages").show();
+      $("#error-reason").text("Is the backend running?");
+  })
 }
 
 function initializeServer(networkname_){
@@ -83,15 +108,14 @@ function initializeServer(networkname_){
     function(d){
       console.log("Backend POST init ok");
       //initializeMocker(networkname_);
-      setTimeout(function(){
-        initializeVisualisationWithClass(networkname_)},1000
-      );
-      startTimer();
+      $("#time-elapsed").show();
+      setupEventStream();
     },
     function(e,s,err) {
       $("#error-messages").show();
       $("#error-reason").text("Is the backend running?");
-      $('#play').prop("disabled",false);
+      $('#power').prop("disabled",false);
+      $('#play').prop("disabled",true);
       $('#pause').prop("disabled",true);
       console.log("Error sending POST to " + BACKEND_URL);
       console.log(e);
@@ -115,6 +139,7 @@ function getGraphNodes(arr) {
       .map(function(i,e){
         return {
           id: e.data.id,
+          control: e.control,
           group: 1
        };
       }).toArray();
@@ -135,7 +160,6 @@ function getGraphLinks(arr) {
 
 function initializeVisualisationWithClass(networkname_){
   this.visualisation = window.visualisation = new P2Pd3(d3.select("#network-visualisation"));
-  setupEventStream();
 };
 
 

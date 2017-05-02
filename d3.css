@@ -128,6 +128,7 @@ input[type=range]:focus::-ms-fill-upper {
   font-size: 18px !important;
   font-style: italic;
   float: right;
+  display: none;
 }
 
 .sidebar {

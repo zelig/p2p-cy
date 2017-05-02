@@ -64,6 +64,7 @@ function setupTimemachine() {
   sim.attr("id", "timemachine-visualisation");
   sim.appendTo("#visualisation-wrapper");
   Timemachine = new P2Pd3(d3.select("#timemachine-visualisation"));
+  var self = Timemachine;
   Timemachine.skipCollectionSetup = true; 
   Timemachine.sidebar = visualisation.sidebar;; 
   Timemachine.graphNodes = $.extend(true, [], visualisation.graphNodes);
@@ -71,16 +72,24 @@ function setupTimemachine() {
   Timemachine.nodesById  = $.extend(true, {}, visualisation.nodesById);
   Timemachine.connsById  = $.extend(true, {}, visualisation.connsById);
 
-  Timemachine.nodeCollection = Timemachine.svg.selectAll("circle")
+  Timemachine.nodeCollection = Timemachine.svg.selectAll("circle").data(self.graphNodes);
+  Timemachine.nodeCollection
     .on("click", function(d) {
         //deselect
-        self.nodeCollection.classed("selected", function(p) { return p.selected =  p.previouslySelected = false; });
+        Timemachine.nodeCollection.classed("selected", function(p) { if (p) {return p.selected = p.previouslySelected = false;} });
         //select
         d3.select(this).classed("selected",true);
-        self.sidebar.updateSidebarSelectedNode(d);
-    }); 
+        Timemachine.sidebar.updateSidebarSelectedNode(d);
+    }) 
+    /*
+    .call(d3.drag()
+        .on("start", function(d){ self.dragstarted(self.simulation, d); } )
+        .on("drag", function(d){ self.dragged(d); } )
+        .on("end", function(d){ self.dragended(self.simulation, d); } ));
+    */
+    ;
 
-  Timemachine.linkCollection = Timemachine.svg.selectAll("line"); 
+  Timemachine.linkCollection = Timemachine.svg.selectAll("line").data(self.graphLinks);
 
   currHistoryIndex = eventHistory.length -1;
   $("#timemachine").val(100);
