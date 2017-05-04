@@ -66,7 +66,8 @@ function setupTimemachine() {
   Timemachine = new P2Pd3(d3.select("#timemachine-visualisation"));
   var self = Timemachine;
   Timemachine.skipCollectionSetup = true; 
-  Timemachine.sidebar = visualisation.sidebar;; 
+  Timemachine.sidebar = visualisation.sidebar; 
+  Timemachine.sidebar.visualisation = self; 
   Timemachine.graphNodes = $.extend(true, [], visualisation.graphNodes);
   Timemachine.graphLinks = $.extend(true, [], visualisation.graphLinks);
   Timemachine.nodesById  = $.extend(true, {}, visualisation.nodesById);

@@ -32,6 +32,9 @@ $(document).ready(function() {
   $('#play').prop("disabled",true);
 
   //click handlers
+  $('#output-window').on('click', function() {
+    $('#log-console').toggle();
+  });
   $('#power').on('click',function(){ 
     initializeServer("0"); 
     $('#play').prop("disabled",false);
@@ -103,7 +106,7 @@ function initializeServer(networkname_){
     function(d){
       console.log("Backend POST init ok");
       //initializeMocker(networkname_);
-      $("#time-elapsed").show();
+      $(".elapsed").show();
       setupEventStream();
     },
     function(e,s,err) {
@@ -135,19 +138,21 @@ function getGraphNodes(arr) {
         return {
           id: e.data.id,
           control: e.control,
+          visible: true,
           group: 1
        };
       }).toArray();
 }
 
 function getGraphLinks(arr) {
-  return arr.filter(function(i,e){return e.group === 'edges'})
+  return arr.filter(function(i,e){return e.group === 'edges' && !e.control} )
       .map(function(i,e){
         return {
           id: e.data.id,
           control: e.control,
           source: e.data.source,
           target: e.data.target,
+          visible: true,
           group: 1,
           value: i
         };

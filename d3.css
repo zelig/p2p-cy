@@ -157,7 +157,7 @@ input[type=range]:focus::-ms-fill-upper {
 }
 
 .actions {
-  padding: 10px 10px 40px 0;
+  padding: 10px 10px 22px 0;
 }
 
 .action-btn:disabled{
@@ -209,7 +209,7 @@ input[type=range]:focus::-ms-fill-upper {
 }
 
 .counts-table tbody td{
-  font-size:30pt;
+  font-size:30px;
 }
 
 .fixed-width{
@@ -242,8 +242,9 @@ input[type=range]:focus::-ms-fill-upper {
   text-align: center;
 }
 
-.kademlia-info {
-  font-size: 0.8em;
+.kademlia-info,
+.node-info {
+  font-size: 12px;
 }
 
 .stale {
@@ -271,4 +272,12 @@ input[type=range]:focus::-ms-fill-upper {
   font-size: 10px;
   overflow: auto;
   float: left;
+}
+
+.visible {
+  opacity: 1;
+}
+
+.invisible {
+  opacity: 0.1;
 }
