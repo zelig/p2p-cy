@@ -145,6 +145,7 @@ function getGraphLinks(arr) {
       .map(function(i,e){
         return {
           id: e.data.id,
+          control: e.control,
           source: e.data.source,
           target: e.data.target,
           group: 1,
@@ -163,6 +164,16 @@ function updateVisualisationWithClass(graph) {
 
   console.log("Updating visualization with new graph");
   eventHistory.push({timestamp:$("#time-elapsed").text(), content: graph});
+  
+  var objs = [graph.add, graph.remove, graph.message];
+  var act  = [ "ADD", "REMOVE", "MESSAGE" ];
+  for (var i=0;i<objs.length; i++) {
+    for (var k=0; objs[i] && k<objs[i].length; k++) {
+      var obj = objs[i][k];
+      var str = act[i] + " - " + obj.group + " Control: " + obj.control + " - " + obj.data.id + "</br>";
+      $("#log-console").append(str);
+    }
+  } 
 
   $('#node-kademlia-table').addClass("stale");
   //new nodes

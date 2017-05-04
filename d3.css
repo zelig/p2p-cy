@@ -262,3 +262,13 @@ input[type=range]:focus::-ms-fill-upper {
 .existing-node {
   fill: blue;
 }
+
+#output-window {
+  position: absolute;
+  width: inherit;
+  height: 200px;
+  bottom: 0;
+  font-size: 10px;
+  overflow: auto;
+  float: left;
+}
