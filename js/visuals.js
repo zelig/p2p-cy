@@ -18,23 +18,18 @@ class P2Pd3Sidebar {
     this.selectConnections(data.id);
     //selectedNode.find('.node-balance').html(data.balance);
 
-    var payload = [];
-    payload.push(data.id);
-    var jsonpayload = JSON.stringify(payload);
-
     var classThis = this;
   
     $.ajax({
-      url: BACKEND_URL + "/"  + networkname + "/nodes",
-      data: jsonpayload,
-      type: "POST",
+      url: BACKEND_URL + "/networks/"  + networkname + "/nodes/" + data.id,
+      type: "GET",
       dataType: "json"
       }).then(
         function(d){
           console.log("Successfully retrieved node info for id: " + data.id);
           var nodeDom = selectedNode.find('#node-kademlia-table');
           //console.log(d);
-          nodeDom.html(classThis.formatNodeHTML(d[0]));
+          nodeDom.html(classThis.formatNodeHTML(d.protocols.bzz));
           nodeDom.removeClass("stale");
         },
         function(e){

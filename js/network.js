@@ -67,7 +67,7 @@ $(document).ready(function() {
 });
 
 function setupEventStream() {
-  eventSource = new EventSource(BACKEND_URL + '/' + networkname + "/");
+  eventSource = new EventSource(BACKEND_URL + '/networks/' + networkname);
 
   eventSource.addEventListener("simupdate", function(e) {
     updateVisualisationWithClass(JSON.parse(e.data));
@@ -84,12 +84,7 @@ function setupEventStream() {
 }
 
 function startViz(){
-  var opts = {
-    url: BACKEND_URL  + "/" + networkname,
-    type: "PUT",
-    data: {},
-  }
-  $.ajax(opts).then(
+  $.post(BACKEND_URL + "/networks/" + networkname + "/mock").then(
     function(d) {
       startTimer();
       setTimeout(function(){
@@ -104,7 +99,7 @@ function startViz(){
 function initializeServer(networkname_){
   networkname = networkname_;
   $("#error-messages").hide();
-  $.post(BACKEND_URL).then(
+  $.post(BACKEND_URL + "/networks", JSON.stringify({Id: networkname})).then(
     function(d){
       console.log("Backend POST init ok");
       //initializeMocker(networkname_);
@@ -117,7 +112,7 @@ function initializeServer(networkname_){
       $('#power').prop("disabled",false);
       $('#play').prop("disabled",true);
       $('#pause').prop("disabled",true);
-      console.log("Error sending POST to " + BACKEND_URL);
+      console.log("Error sending POST to " + BACKEND_URL + "/networks");
       console.log(e);
     })
 };
