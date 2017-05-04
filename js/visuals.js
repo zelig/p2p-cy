@@ -1,13 +1,21 @@
 class P2Pd3Sidebar {
-  constructor(selector) {
+  constructor(selector, viz) {
     this.sidebar = $(selector)
+    this.visualisation = viz;
   }
   updateSidebarSelectedNode(data) {
+    //reset highlighted links if any
+    this.visualisation.linkCollection
+      .attr("stroke", "#808080")
+      .attr("stroke-width", "1.5")
+      .classed("stale",false);
+
     var selectedNode = $(this.sidebar).find('#selected-node');
     $(".node-bar").show();
     selectedNode.addClass('node-selected');
-    selectedNode.find('#node-id').html(this.nodeShortLabel(data.id));
+    selectedNode.find('#node-id').html(nodeShortLabel(data.id));
     selectedNode.find('#node-index').html(data.index);
+    this.selectConnections(data.id);
     //selectedNode.find('.node-balance').html(data.balance);
 
     var payload = [];
@@ -34,40 +42,95 @@ class P2Pd3Sidebar {
           console.log(e);
         }
     );
+  }
 
+  updateSidebarCounts(newNodes, newLinks, removeNodes, removeLinks) {
+    //console.log(newNodes);
+    upnodes += newNodes.length;
+    $("#nodes-up-count").text(upnodes);
+    $("#nodes-add-count").text(newNodes.length);
+
+    //console.log(newLinks);
+
+    uplinks += newLinks.length;
+    $("#edges-up-count").text(uplinks);
+    $("#edges-add-count").text(newLinks.length);
+
+    //console.log(removeNodes);
+
+    upnodes -= removeNodes.length;
+    $("#nodes-up-count").text(upnodes);
+    $("#nodes-remove-count").text(removeNodes.length);
+
+    //console.log(removeLinks);
+
+    for (var i=0; i<removeLinks.length; i++) {
+      if (this.visualisation.connsById[removeLinks[i].id]) {
+        uplinks -= removeLinks.length;
+        delete this.visualisation.connsById[removeLinks[i].id];
+      }
+    }
+    $("#edges-up-count").text(uplinks);
+    $("#edges-remove-count").text(removeLinks.length);
   }
 
   formatNodeHTML(str) {
     return str.replace(/\n/g,"<br/>");
   }
 
-  nodeShortLabel(id) {
-    return id.substr(0,8);
+  selectConnections(id) {
+    //set node links to "foreground" (no opacity)
+    var conns         = this.visualisation.nodesById[nodeShortLabel(id)];
+    this.visualisation.linkCollection.classed("stale", true);
+    var connSelection = this.visualisation.linkCollection.filter(function(n) {
+      return conns.indexOf(n.id) > -1;
+    });
+    connSelection
+          .attr("stroke", "#f69047")
+          .attr("stroke-width", 2.5)
+          .classed("stale", false);
+
+    //set node link targets to "foreground" (no opacity)
+    this.visualisation.nodeCollection.classed("stale", true);
+    var targets       = [];
+    for (var k=0;k<conns.length;k++) {
+      targets.push(this.visualisation.connsById[conns[k]].target);
+    }
+    var nodesSelection = this.visualisation.nodeCollection.filter(function(n) {
+      return targets.indexOf(n.id) > -1;
+    });
+    nodesSelection.classed("stale", false);
   }
 }
 
 class P2Pd3 {
-
   constructor(svg) {
 	  this.updatecount = 0;
-    this.svg = svg;
-
     this.width = svg.attr("width");
     this.height = svg.attr("height");
+    this.svg = svg;
 
-    this.graphNodes = []
-    this.graphLinks = []
-    this.graphMsgs = []
+    this.graphNodes = [];
+    this.graphLinks = [];
+    this.graphMsgs = [];
+    //for convenience; this may (or should) be "merged" with graphNodes
+    this.nodesById = {};
+    this.connsById = {};
+
+    this.skipCollectionSetup = false;
 
     this.nodeRadius = 16;
-
     this.color = d3.scaleOrdinal(d3.schemeCategory20);
+    this.sidebar = new P2Pd3Sidebar('#sidebar', this);
+  }
 
-    this.sidebar = new P2Pd3Sidebar('#sidebar');
+  linkDistance(d) {
+    return Math.floor(Math.random() * 11) + 80;
   }
 
   // increment callback function during simulation
   ticked(link,node) {
+    var self = this;
     link
         .attr("x1", function(d) { return d.source.x; })
         .attr("y1", function(d) { return d.source.y; })
@@ -75,13 +138,14 @@ class P2Pd3 {
         .attr("y2", function(d) { return d.target.y; });
 
     node
-        .attr("cx", function(d) { return d.x; })
-        .attr("cy", function(d) { return d.y; });
+        .attr("cx", function(d) { return d.x = Math.max(self.nodeRadius, Math.min(self.width - self.nodeRadius, d.x)); })
+        //.attr("cx", function(d) { return d.x; })
+        //.attr("cy", function(d) { return d.y; });
+        .attr("cy", function(d) { return d.y = Math.max(self.nodeRadius, Math.min(self.height - self.nodeRadius, d.y)) });
   }
 
   // event callbacks
   dragstarted(simulation,d) {
-    console.log(d.id)
     if (!d3.event.active) simulation.alphaTarget(0.3).restart();
     d.fx = d.x;
     d.fy = d.y;
@@ -99,179 +163,223 @@ class P2Pd3 {
   } 
   // end event callbacks
 
-  initializeVisualisation(nodes,links) {
 
+
+  initialize() {
+    if (this.initialized) {
+      return;
+    }
     var self = this;
 
-    var simulation = this.simulation = d3.forceSimulation()
+    var simulation = this.simulation = d3.forceSimulation(self.graphNodes)
         .force("link", d3.forceLink().id(function(d) { return d.id; }))
-        .force("charge", d3.forceManyBody(-1))
-        .force("center", d3.forceCenter(this.width / 2, this.height / 2))
+        .force("charge", d3.forceManyBody(-10))
+        .force("center", d3.forceCenter(self.width / 2, self.height / 2))
+        //.force("x", d3.forceX())
+        //.force("y", d3.forceY())
         .alphaDecay(0)
-        .alphaMin(0);     
+        .alphaMin(0)     
+        .on("tick", function(){ self.ticked(self.linkCollection, self.nodeCollection) });
 
-    this.graphLinks = links;
-    this.link =this.addLinks(links);
-    console.log(this.link);
-
-    this.graphNodes = nodes;  
-    this.node = this.addNodes(nodes);
-    console.log(this.node);
-
-    simulation
-        .nodes(this.graphNodes)
-        .on("tick", function(){ self.ticked(self.link, self.node) });
+    if (!this.skipCollectionSetup) {
+      this.setupNodes();
+      this.setupLinks();
+    }
 
     simulation.force("link")
         .links(this.graphLinks)
-        .distance(function(l,i){return 30;});
+        //.distance(function(l,i){return 80;});
+        .distance(self.linkDistance);
 
-    this.node
-        .attr("cx", function(d) { return d.x; })
-        .attr("cy", function(d) { return d.y; });
-    }
+    this.initialized = true;
+  }
 
-  addNodes(nodes){
-    var self = this;
-    this.node = this.svg.append("g")
+
+  setupNodes() {
+    this.nodeCollection = this.svg.append("g")
         .attr("class", "nodes")
-        .selectAll("circle")
-        .data(nodes)
-        .enter().append("circle")
-        .attr("r", this.nodeRadius)
-        .attr("fill", function(d) { return self.color(d.group); })
-        .on("click", function(d) {
-            //deselect
-            self.node.classed("selected", function(p) { return p.selected =  p.previouslySelected = false; })
-            //select
-            d3.select(this).classed("selected",true);
-            self.sidebar.updateSidebarSelectedNode(d);
-        })
-        .call(d3.drag()
-            .on("start", function(d){ self.dragstarted(self.simulation, d); } )
-            .on("drag", function(d){ self.dragged(d); } )
-            .on("end", function(d){ self.dragended(self.simulation, d); } ));   
-
-    return this.node;
+        .attr("stroke", "#fff").attr("stroke-width", 1.5)
+        .selectAll(".node");
   }
 
-  addLinks(links){
-    this.link = this.svg.append("g")
+  setupLinks(){
+    this.linkCollection = this.svg.append("g")
         .attr("class", "links")
-        .selectAll("line")
-        .data(links)
-        .enter().append("line")
-        .attr("stroke", "#808080")
-        //left as an example of how to set an attribute using per-edge data
-        //.attr("stroke-width", function(d) { return Math.sqrt(d.value); });
-        .attr("stroke-width", "1.0");
-    return this.link;
+        .selectAll(".link");
   }
+
 
   updateVisualisation(newNodes,newLinks,removeNodes,removeLinks,triggerMsgs) {
-	
     var self = this;
 	
   	this.updatecount++;
+    this.nodesChanged = false;
+    this.linksChanged = false;
 	
-    this.link = this.appendLinks(newLinks);
-
-    this.node = this.appendNodes(newNodes);
-
-    this.node = this.removeNodes(removeNodes);
-
-    this.link = this.removeLinks(removeLinks);
+    this.appendNodes(newNodes);
+    this.removeNodes(removeNodes);
+    this.appendLinks(newLinks);
+    this.removeLinks(removeLinks);
     
     this.msg = this.triggerMsgs(triggerMsgs);
 
-    // // Update and restart the simulation.
-    this.simulation.nodes(this.graphNodes);            
-    this.simulation.force("link").links(this.graphLinks);
+    if (!this.initialized) {
+      this.initialize();
+    }
 
-    this.simulation.force("center", d3.forceCenter(this.width/2, this.height/2));
+    //console.log(this.graphNodes);
+    //console.log(this.graphLinks);
+    this.restartSimulation();
+  }
 
-    this.simulation.alpha(0.1).restart();
+  restartSimulation() {
+    // Update and restart the simulation.
+    var self = this;
+    // Apply the general update pattern to the nodes.
+    if (this.nodesChanged) {
+      this.nodeCollection = this.nodeCollection.data(self.graphNodes);
+      // Apply class "existing-node" to all existing nodes
+      this.nodeCollection.attr("fill","#ae81ff");
+      // Remove all old nodes
+      this.nodeCollection.exit().remove();
+      // Apply to all new nodes (enter selection)
+      this.nodeCollection = this.nodeCollection
+          .enter()
+          .append("circle")
+          .attr("fill", "#46bc99")
+          .attr("r", this.nodeRadius)
+          .on("click", function(d) {
+              //deselect
+              self.nodeCollection.classed("selected", function(p) { return p.selected =  p.previouslySelected = false; })
+              //select
+              d3.select(this).classed("selected",true);
+              self.sidebar.updateSidebarSelectedNode(d);
+
+          })
+          .call(d3.drag()
+              .on("start", function(d){ self.dragstarted(self.simulation, d); } )
+              .on("drag", function(d){ self.dragged(d); } )
+              .on("end", function(d){ self.dragended(self.simulation, d); } ))  
+          .merge(this.nodeCollection);
+    }
+
+    if (this.linksChanged) {
+      // Apply the general update pattern to the links.
+      this.linkCollection = this.linkCollection.data(this.graphLinks);
+      this.linkCollection.exit().remove();
+      this.linkCollection = this.linkCollection
+          .enter()
+          .append("line")
+          .attr("stroke", "#808080")
+          .attr("stroke-width", "1.5")
+          .merge(this.linkCollection);
+    }
+
+
+    this.simulation.nodes(self.graphNodes);            
+    this.simulation.force("link").links(self.graphLinks);
+    this.simulation.force("center", d3.forceCenter(self.width/2, self.height/2));
+    this.simulation.alpha(1).restart();
 
   }
 
   appendNodes(nodes){
-    var self = this;
-    for (var i = nodes.length - 1; i >= 0; i--) {
-     this.graphNodes.push(nodes[i]); 
+    if (!nodes.length) { return }
+
+    this.graphNodes = this.graphNodes.concat(nodes);
+    for (var i=0; i<nodes.length; i++) {
+      console.log("NEW node: " + nodes[i].id);
+      this.nodesById[nodeShortLabel(nodes[i].id)] = [];
     }
-    this.node = this.node.data(this.graphNodes, function(d) { return d.id;});
-    this.node = this.node
-                    .enter()
-                    .append("circle")
-        .attr("r", this.nodeRadius)
-        .attr("fill", function(d) { return self.color(d.group); })
-        .on("click", function(d) {
-            //deselect
-            self.node.classed("selected", function(p) { return p.selected =  p.previouslySelected = false; })
-            //select
-            d3.select(this).classed("selected",true);
-            self.sidebar.updateSidebarSelectedNode(d);
-
-        })
-        .call(d3.drag()
-            .on("start", function(d){ self.dragstarted(self.simulation, d); } )
-            .on("drag", function(d){ self.dragged(d); } )
-            .on("end", function(d){ self.dragended(self.simulation, d); } ))  
-            //.on("end", function(d){ self.dragended(self.simulation, d); } ));   
-/*
-                    .attr("fill", function(d) { return d3.scaleOrdinal(d3.schemeCategory20)(d.group) })
-                    .attr("r", 5)
-                    .attr("x",500)
-*/
-                    // .on("click", function(d) {
-                    //     alert('test')
-                    //     // if (d3.event.defaultPrevented) return;
-
-                    //     // if (!shiftKey) {
-                    //     //     //if the shift key isn't down, unselect everything
-                    //     //     node.classed("selected", function(p) { return p.selected =  p.previouslySelected = false; })
-                    //     // }
-
-                    //     // // always select this node
-                    //     // d3.select(this).classed("selected", d.selected = !d.previouslySelected);
-                    // })
-                    // .call(d3.drag()
-                    //   .on("start", function(d){ self.dragstarted(self.simulation, d); } )
-                    //   .on("drag", function(d){ self.dragged(d); } )
-                    //   .on("end", function(d){ self.dragended(self.simulation, d); } ))
-                    .merge(this.node);
-
-    return this.node;
+    this.nodesChanged = true;
   }
 
   removeNodes(nodes){
-    this.graphNodes = this.graphNodes.filter(function(n){ return nodes.indexOf(n) < 0; })
-    this.node = this.node.data(this.graphNodes, function(d) { return d.id;});
-    this.node.exit().remove();
-    return this.node;
+    if (!nodes.length) { return }
+    var self = this;
+
+    console.log("REMOVE node: " + nodes[0].id);
+    this.graphNodes = this.graphNodes.filter(function(n){ 
+        var contained = false;
+        for (var k=0; k<nodes.length; k++) {
+          if (n.id == nodes[k].id) {
+            contained = true;
+            //continue;
+          } 
+          //this wouldn't be necessary if the backend behaved deterministically with connections
+          //we need to remove all nodes' connections "manually" in the frontend or we end up
+          //with orphan connections 
+          var lab = nodeShortLabel(nodes[k].id);
+          if (self.nodesById[lab]) {
+            //self.removeNodesLinks(lab);
+          }
+        }
+        return contained == false ; 
+    });
+    this.nodesChanged = true;
   }
 
   appendLinks(links){
+    if (!links.length) { return }
 
     this.graphLinks = this.graphLinks.concat(links);
+    for (var i=0;i<links.length;i++) {
+      var id     = links[i].id;
+      var source = nodeShortLabel(links[i].source);
+      var target = nodeShortLabel(links[i].target);
+      //this should not happen, but it does...
+      //indicates connections arrive before node events
+      //so this is a bit of a hack...TODO on backend
+      if (!this.nodesById[source]) {
+        this.nodesById[source] = [];
+      }
+      this.nodesById[source].push(id);
+      if (!this.nodesById[target]) {
+        this.nodesById[target] = [];
+      }
+      this.nodesById[target].push(id);
 
-    // Apply the general update pattern to the links.
-    this.link = this.link.data(this.graphLinks);
-
-    // add new links
-    this.link = this.link.enter().append("line")
-				.attr("stroke", "#808080")
-				.attr("stroke-width", "1.0")
-				.merge(this.link);
-    
-    return this.link;
+      this.connsById[id] = {};
+      this.connsById[id].target = links[i].target;
+      this.connsById[id].source = links[i].source;
+    }
+    console.log("ADD connection, source: " + source+ " - target: " + target );
+    this.linksChanged = true;
   }
 
+  removeNodesLinks(id) {
+    var linksToRemove = [];
+    var connList = this.connsById;
+    Object.keys(connList).forEach(function(key,index) {
+      if (nodeShortLabel(connList[key].source) == id ||
+          nodeShortLabel(connList[key].target) == id ) {
+        linksToRemove.push({id: key});
+        eventHistory.push({timestamp:$("#time-elapsed").text(), content: {add:[], remove:[{id: key}]} });
+        uplinks -= 1;
+        console.log("REMOVE connection, id:" + key);
+        delete connList[key];
+      }
+    });
+    $("#edges-up-count").text(uplinks);
+    this.removeLinks(linksToRemove);
+    delete this.nodesById[id];
+  } 
+
   removeLinks(links){
-    this.graphLinks = this.graphLinks.filter(function(n){ return links.indexOf(n) < 0; })
-    this.link = this.link.data(this.graphLinks);
-    this.link.exit().remove();
-    return this.link;
+    if (!links.length) { return }
+
+    var self = this;
+    this.graphLinks= this.graphLinks.filter(function(n){ 
+        var contained = false
+        for (var k=0; k<links.length; k++) {
+          if (n.id == links[k].id) {
+            contained = true;
+            continue;
+          } 
+        }
+        return contained == false ; 
+    });
+    this.linksChanged = true;
   }
   
 	triggerMsgs(msgs){
@@ -311,3 +419,6 @@ function generateUID() {
     return ("0000" + (Math.random()*Math.pow(36,4) << 0).toString(36)).slice(-4)
 }
 
+function  nodeShortLabel(id) {
+    return id.substr(0,8);
+}

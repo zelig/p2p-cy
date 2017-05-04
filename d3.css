@@ -128,6 +128,7 @@ input[type=range]:focus::-ms-fill-upper {
   font-size: 18px !important;
   font-style: italic;
   float: right;
+  display: none;
 }
 
 .sidebar {
@@ -247,4 +248,17 @@ input[type=range]:focus::-ms-fill-upper {
 
 .stale {
   opacity: 0.4;
+}
+
+.nodes {
+}
+
+.new-node {
+  fill: green;
+  opacity: 0.5;
+  transition: opacity 1s ease-out;
+}
+
+.existing-node {
+  fill: blue;
 }

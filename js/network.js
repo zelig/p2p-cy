@@ -6,6 +6,10 @@ var clockId;
 var runViz = null;
 var pauseViz = false;
 var networkname = null;
+var eventSource = null;
+var eventHistory = [];
+var currHistoryIndex = 0;
+var timemachine = false;
 var time_elapsed = new Date();
 
 
@@ -25,15 +29,22 @@ var uplinks   = 0;
 $(document).ready(function() {
   
   $('#pause').prop("disabled",true);
+  $('#play').prop("disabled",true);
 
+  //click handlers
+  $('#power').on('click',function(){ 
+    initializeServer("0"); 
+    $('#play').prop("disabled",false);
+    $('#power').prop("disabled",true);
+  });
   //click handlers
   $('#play').on('click',function(){ 
     if (pauseViz) {
-      refreshViz();
       pauseViz = false;
+      startTimer();
       $("#status-messages").hide();
     } else {
-      initializeServer("0"); 
+      startViz(); 
     }
     $('#play').prop("disabled",true);
     $('#pause').prop("disabled",false);
@@ -41,22 +52,53 @@ $(document).ready(function() {
 
   $("#pause").click(function() {
     if (clockId != null) {
-      clearInterval(runViz);
       clearInterval(clockId);
+      eventSource.close();
       $("#status-messages").text("Visualization Paused");
       $("#status-messages").show();
+      $("#timemachine").show();
       pauseViz = true;
       $('#pause').prop("disabled",true);
       $('#play').prop("disabled",false);
+
+      setupTimemachine();
     }
   });
 });
 
-function refreshViz() {
-  runViz = setInterval(function() {
-    updateVisualisationWithClass(networkname, 1000, null) 
-  }, 1000);
-  
+function setupEventStream() {
+  eventSource = new EventSource(BACKEND_URL + '/' + networkname + "/");
+
+  eventSource.addEventListener("simupdate", function(e) {
+    updateVisualisationWithClass(JSON.parse(e.data));
+  });
+
+  eventSource.onerror = function() {
+    $("#error-messages").show();
+    $("#error-reason").text("Has the backend been shut down?");
+    $('#pause').prop("disabled",true);
+    $('#play').prop("disabled",true);
+    $('#power').prop("disabled",false);
+    clearInterval(clockId);
+  }
+}
+
+function startViz(){
+  var opts = {
+    url: BACKEND_URL  + "/" + networkname,
+    type: "PUT",
+    data: {},
+  }
+  $.ajax(opts).then(
+    function(d) {
+      startTimer();
+      setTimeout(function(){
+        initializeVisualisationWithClass(networkname),1000
+      })
+  }, function(e) {
+      $("#error-messages").show();
+      $("#error-reason").text("Is the backend running?");
+  })
 }
 
 function initializeServer(networkname_){
@@ -65,20 +107,22 @@ function initializeServer(networkname_){
   $.post(BACKEND_URL).then(
     function(d){
       console.log("Backend POST init ok");
-              //initializeMocker(networkname_);
-      setTimeout(function(){initializeVisualisationWithClass(networkname_)},1000);
-      startTimer();
+      //initializeMocker(networkname_);
+      $("#time-elapsed").show();
+      setupEventStream();
     },
     function(e,s,err) {
       $("#error-messages").show();
       $("#error-reason").text("Is the backend running?");
-      $('#play').prop("disabled",false);
+      $('#power').prop("disabled",false);
+      $('#play').prop("disabled",true);
       $('#pause').prop("disabled",true);
       console.log("Error sending POST to " + BACKEND_URL);
       console.log(e);
     })
 };
 
+//Mocker is currently not used for this visualization
 function initializeMocker(networkname_) {
   $.post(BACKEND_URL + "/" + networkname_ + "/mockevents/").then(
     function(d){
@@ -90,150 +134,54 @@ function initializeMocker(networkname_) {
     })
 };
 
-function initializeVisualisationWithClass(networkname_){
-
-  console.log("Initializing visualization");
-  var self = this;
-
-  this.visualisation
-  = window.visualisation
-  = new P2Pd3(d3.select("svg"));
-
-  $.get(BACKEND_URL + '/' + networkname_ + "/").then(
-    function(graph){
-      console.log("Received graph data from backend");
-      //console.log(graph.add);
-      self.graphNodes = $(graph.add)
-        .filter(function(i,e){return e.group === 'nodes'})
-        .map(function(i,e){
-          return {
-            id: e.data.id,
-            group: 1
-         };
-        })
-
-        .toArray();
-      //console.log(self.graphNodes);
-
-
-      upnodes = self.graphNodes.length;
-      $("#nodes-up-count").text(upnodes);
-
-      self.graphLinks = $(graph.add)
-      .filter(function(i,e){return e.group === 'edges'})
+function getGraphNodes(arr) {
+   return arr.filter(function(i,e){return e.group === 'nodes'})
       .map(function(i,e){
         return {
+          id: e.data.id,
+          control: e.control,
+          group: 1
+       };
+      }).toArray();
+}
+
+function getGraphLinks(arr) {
+  return arr.filter(function(i,e){return e.group === 'edges'})
+      .map(function(i,e){
+        return {
+          id: e.data.id,
           source: e.data.source,
           target: e.data.target,
           group: 1,
           value: i
         };
-      })
-      .toArray();
+      }).toArray();
+}
 
-      //console.log(self.graphLinks);
-
-      
-      uplinks = self.graphLinks.length;
-      $("#edges-up-count").text(uplinks);
-
-      self.visualisation.initializeVisualisation(self.graphNodes,self.graphLinks);
-
-      refreshViz();
-    },
-    function(e) { 
-      console.log("failed getting graph data from backend; can't initialize visualization");
-      console.log(e); 
-    })
+function initializeVisualisationWithClass(networkname_){
+  this.visualisation = window.visualisation = new P2Pd3(d3.select("#network-visualisation"));
 };
 
 
-function updateVisualisationWithClass(networkname_, delay, callback){
-
+function updateVisualisationWithClass(graph) {
   var self = this;
-  $.get(BACKEND_URL + '/' + networkname_ + "/").then(
-    function(graph){
 
-      console.log("Updating visualization with new graph");
+  console.log("Updating visualization with new graph");
+  eventHistory.push({timestamp:$("#time-elapsed").text(), content: graph});
 
-      //console.log(graph);
-      //console.log($(graph.add));
-      //console.log($(graph.remove));
-      $('#node-kademlia-table').addClass("stale");
-      //new nodes
-      var newNodes = $(graph.add)
-      .filter(function(i,e){return e.group === 'nodes'})
-      .map(function(i,e){ return {id: e.data.id, group: 1}; })
-      .toArray();
+  $('#node-kademlia-table').addClass("stale");
+  //new nodes
+  var newNodes = getGraphNodes($(graph.add));
+  //new connections 
+  var newLinks = getGraphLinks($(graph.add));
+  //down nodes
+  var removeNodes = getGraphNodes($(graph.remove));
+  //down connections 
+  var removeLinks = getGraphLinks($(graph.remove));
 
-      //console.log(newNodes);
-      
-      upnodes += newNodes.length;
-      $("#nodes-up-count").text(upnodes);
-      $("#nodes-add-count").text(newNodes.length);
+  visualisation.sidebar.updateSidebarCounts(newNodes, newLinks, removeNodes, removeLinks); 
 
-      //new connections 
-      var newLinks = $(graph.add)
-      .filter(function(i,e){return e.group === 'edges'})
-      .map(function(i,e){
-        return {
-          source: e.data.source,
-          target: e.data.target,
-          group: 1,
-          value: i
-        };
-      })
-      .toArray();
-
-      //console.log(newLinks);
-
-      uplinks += newLinks.length;
-      $("#edges-up-count").text(uplinks);
-      $("#edges-add-count").text(newLinks.length);
-
-      //down nodes
-      /*
-      var removeNodes = $(graph.remove)
-      .filter(function(i,e){return e.group === 'nodes'})
-      .map(function(i,e){ return {id: e.data.id, group: 1}; })
-      .toArray();
-      */
-      var removeNodes = $(graph.remove)
-      .filter(function(i,e){return e.group === "nodes" })
-      .map(function(i,e){ return {id: e, group: 1}; })
-      .toArray();
-
-      //console.log(removeNodes);
-
-      upnodes -= removeNodes.length;
-      $("#nodes-up-count").text(upnodes);
-      $("#nodes-remove-count").text(removeNodes.length);
-
-      //down connections 
-      /*
-      var removeLinks = $(graph.remove)
-      .filter(function(i,e){return e.group === 'edges'})
-      .map(function(i,e){
-        return {
-          source: e.data.source,
-          target: e.data.target,
-          group: 1,
-          value: i
-        };
-      })
-      .toArray();
-      */
-      var removeLinks = $(graph.remove)
-      .filter(function(i,e){return e.group === "edges" })
-      .toArray();
-
-      //console.log(removeLinks);
-
-      uplinks -= removeLinks.length;
-      $("#edges-up-count").text(uplinks);
-      $("#edges-remove-count").text(removeNodes.length);
-
-      var triggerMsgs = $(graph.add)
+  var triggerMsgs = $(graph.add)
       .filter(function(i,e){return e.group === 'msgs'})
       .map(function(i,e){
         return {
@@ -245,14 +193,7 @@ function updateVisualisationWithClass(networkname_, delay, callback){
       })
       .toArray();
 
-      self.visualisation.updateVisualisation(newNodes,newLinks,removeNodes,removeLinks,triggerMsgs);
-
-  } ,
-  function(e){ 
-    $("#error-messages").show();
-    $("#error-reason").text("Has the backend been shut down?");
-    clearInterval(clockId);
-    console.log(e); }
-  )
-
+  self.visualisation.updateVisualisation(newNodes,newLinks,removeNodes,removeLinks,triggerMsgs);
 };
+
+
