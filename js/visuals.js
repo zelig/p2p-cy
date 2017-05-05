@@ -353,7 +353,6 @@ class P2Pd3 {
   appendLinks(links){
     if (!links.length) { return }
 
-    this.graphLinks = this.graphLinks.concat(links);
     for (var i=0;i<links.length;i++) {
       var id     = links[i].id;
       var source = nodeShortLabel(links[i].source);
@@ -361,6 +360,26 @@ class P2Pd3 {
       //this should not happen, but it does...
       //indicates connections arrive before node events
       //so this is a bit of a hack...TODO on backend
+      var srcmatch = false;
+      var trgmatch = false;
+      for (var k=0; k<this.graphNodes.length; k++) {
+        var nid = nodeShortLabel(this.graphNodes[k].id)
+        if (nid == source) {
+          srcmatch = true;
+        }
+        if (nid == target) {
+          trgmatch = true;
+        }
+        if (srcmatch && trgmatch) {
+          break;
+        }
+      }
+      //don't try adding connections to non-existing nodes...
+      if (!srcmatch || !trgmatch) {
+          //uplinks -= 1
+          //$("#edges-up-count").text(uplinks);
+          return
+      }
       if (!this.nodesById[source]) {
         this.nodesById[source] = [];
       }
@@ -374,6 +393,7 @@ class P2Pd3 {
       this.connsById[id].target = links[i].target;
       this.connsById[id].source = links[i].source;
     }
+    this.graphLinks = this.graphLinks.concat(links);
     console.log("ADD connection, source: " + source+ " - target: " + target );
     this.linksChanged = true;
   }
