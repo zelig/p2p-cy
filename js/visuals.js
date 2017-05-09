@@ -13,6 +13,7 @@ class P2Pd3Sidebar {
     var selectedNode = $(this.sidebar).find('#selected-node');
     $(".node-bar").show();
     selectedNode.addClass('node-selected');
+    selectedNode.find('#full-node-id').val(data.id);
     selectedNode.find('#node-id').html(nodeShortLabel(data.id));
     selectedNode.find('#node-index').html(data.index);
     this.selectConnections(data.id);
@@ -93,7 +94,7 @@ class P2Pd3Sidebar {
     var targets       = [];
     for (var k=0;k<conns.length;k++) {
       var c = this.visualisation.connsById[conns[k]];
-      if (c.target == conns[k].id) {
+      if (c.target == id) {
         targets.push(c.source);
       } else {
         targets.push(c.target);
@@ -101,11 +102,54 @@ class P2Pd3Sidebar {
       }
     }
     var nodesSelection = this.visualisation.nodeCollection.filter(function(n) {
-      return targets.indexOf(n.id) > -1;
+      return targets.indexOf(n.id) > -1 || n.id == id;
     });
     nodesSelection.classed("stale", false);
   }
 }
+
+function killNode() {
+  var node = $('#full-node-id').val();
+  $.post(BACKEND_URL + "/networks/" + networkname + "/nodes/" + node + "/stop").then(
+    function(d) {
+      console.log("Node successfully stopped");
+    },
+    function(e) {
+      console.log("Error stopping node");
+      console.log(e);
+    })
+}
+
+function connectTo() {
+  /*
+  var fullnode = $('#full-node-id').val();
+  var nodes = this.visualisation.graphNodes;
+  var possibleConnections = [];
+  for (var i=0; i<nodes.length; i++) {
+    if (! visualisation.nodesById[node].indexOf(fullnode) < -1) {
+      possibleConnections.push(nodes[i].id);
+    }
+  }
+  */
+  $("body").css({"cursor": "crosshair"});
+  selectingTarget = true;
+}
+
+function finalizeConnectTo() {
+  $("body").css({"cursor": "default"});
+  selectingTarget = false;
+  var target = $("#target-id").val();
+  var source = $("#full-node-id").val();
+  $.post(BACKEND_URL + "/networks/" + networkname + "/nodes/" + source+ "/conn/" + target).then(
+    function(d) {
+      console.log("Node successfully connected");
+    },
+    function(e) {
+      console.log("Error connecting node");
+      console.log(e);
+    })
+}
+
 
 class P2Pd3 {
   constructor(svg) {
@@ -225,7 +269,7 @@ class P2Pd3 {
     this.appendLinks(newLinks);
     this.removeLinks(removeLinks);
     
-    this.msg = this.triggerMsgs(triggerMsgs);
+    this.msg = triggerMsgs;
 
     if (!this.initialized) {
       this.initialize();
@@ -259,11 +303,16 @@ class P2Pd3 {
           .attr("fill", "#46bc99")
           .attr("r", this.nodeRadius)
           .on("click", function(d) {
+            if(selectingTarget) {
+              $("#target-id").val(d.id);
+              finalizeConnectTo();
+            } else {
               //deselect
               self.nodeCollection.classed("selected", function(p) { return p.selected =  p.previouslySelected = false; })
               //select
               d3.select(this).classed("selected",true);
               self.sidebar.updateSidebarSelectedNode(d);
+            }
 
           })
           .call(d3.drag()
@@ -285,6 +334,16 @@ class P2Pd3 {
           .merge(this.linkCollection);
     }
 
+    if (this.msg.length) {
+      var self = this;
+      this.msgCollection = this.linkCollection.filter(function(n) {
+        return self.msg[0].id == n.id;
+      });
+      this.msgCollection
+        .classed("highlight",true);
+      setTimeout(this.resetMsgCollection, 1000);
+    }
+
 
     this.simulation.nodes(self.graphNodes);            
     try {
@@ -295,6 +354,11 @@ class P2Pd3 {
     this.simulation.force("center", d3.forceCenter(self.width/2, self.height/2));
     this.simulation.alpha(1).restart();
 
+  }
+
+  resetMsgCollection() {
+    if (!this.msgCollection) return;
+    this.msgCollection.classed("highlight",false);
   }
 
   appendNodes(nodes){
@@ -380,6 +444,7 @@ class P2Pd3 {
           //$("#edges-up-count").text(uplinks);
           return
       }
+      /*
       if (!this.nodesById[source]) {
         this.nodesById[source] = [];
       }
@@ -387,7 +452,9 @@ class P2Pd3 {
       if (!this.nodesById[target]) {
         this.nodesById[target] = [];
       }
+      */
       this.nodesById[target].push(id);
+      this.nodesById[source].push(id);
 
       this.connsById[id] = {};
       this.connsById[id].target = links[i].target;
@@ -426,6 +493,16 @@ class P2Pd3 {
           if (n.id == links[k].id) {
             contained = true;
             //n.visible = false;
+            var s = nodeShortLabel(links[k].source);            
+            var t = nodeShortLabel(links[k].target);            
+            var j = self.nodesById[s].indexOf(n.id);
+            if (j>-1) {
+              self.nodesById[s].splice(j, 1);
+            }
+            j = self.nodesById[t].indexOf(n.id);
+            if (j>-1) {
+              self.nodesById[t].splice(j, 1);
+            }
             break;
           } 
         }
@@ -435,7 +512,14 @@ class P2Pd3 {
   }
   
 	triggerMsgs(msgs){
+    if (!msgs.length) { return msgs }
+
+    /*
 		this.graphMsgs = [];
+    for (var i=0;i<links.length;i++) {
+      var id     = links[i].id;
+      this.connsById[id];
+      
 		for (var i = 0; i < msgs.length; i++) {
 			var conn = this.getConnByNodes(msgs[i].source,msgs[i].target);
 			if (conn != -1) {
@@ -448,6 +532,7 @@ class P2Pd3 {
 			}
 		}
 		return this.graphMsgs;
+    */
 	}
 
 
@@ -474,3 +559,4 @@ function generateUID() {
 function  nodeShortLabel(id) {
     return id.substr(0,8);
 }
+

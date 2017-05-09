@@ -5,11 +5,14 @@ var s = 0;;
 var clockId;
 var runViz = null;
 var pauseViz = false;
-var networkname = null;
+var networkname = "0";
+var mockerlist  = [];
+var mockerlist_generated = false;
 var eventSource = null;
 var eventHistory = [];
 var currHistoryIndex = 0;
 var timemachine = false;
+var selectingTarget = false;
 var time_elapsed = new Date();
 
 
@@ -26,6 +29,9 @@ var startTimer = function () {
 var upnodes   = 0;
 var uplinks   = 0;
 
+var defaultSim = "default";
+var selectedSim = defaultSim;
+
 $(document).ready(function() {
   
   $('#pause').prop("disabled",true);
@@ -35,12 +41,13 @@ $(document).ready(function() {
   $('#output-window').on('click', function() {
     $('#log-console').toggle();
   });
+
   $('#power').on('click',function(){ 
-    initializeServer("0"); 
+    initializeServer(networkname); 
     $('#play').prop("disabled",false);
     $('#power').prop("disabled",true);
   });
-  //click handlers
+
   $('#play').on('click',function(){ 
     if (pauseViz) {
       pauseViz = false;
@@ -67,6 +74,18 @@ $(document).ready(function() {
       setupTimemachine();
     }
   });
+
+  $('.menuitem').on('click',function(){ 
+    switch ($(this).attr("id")) {
+      case "selectmocker": 
+              selectMocker();
+              $("menu").hide("slow");
+              break;
+      default: 
+              selectMocker();
+              break;
+    }
+  });
 });
 
 function setupEventStream() {
@@ -86,8 +105,14 @@ function setupEventStream() {
   }
 }
 
+function selectMockerBackend(id) {
+  selectedSim = id;
+  funcClose();
+  startViz();
+}
+
 function startViz(){
-  $.post(BACKEND_URL + "/networks/" + networkname + "/mock").then(
+  $.post(BACKEND_URL + "/networks/" + networkname + "/mock/" + selectedSim).then(
     function(d) {
       startTimer();
       setTimeout(function(){
@@ -99,8 +124,7 @@ function startViz(){
   })
 }
 
-function initializeServer(networkname_){
-  networkname = networkname_;
+function initializeServer(){
   $("#error-messages").hide();
   $.post(BACKEND_URL + "/networks", JSON.stringify({Id: networkname})).then(
     function(d){
@@ -120,6 +144,66 @@ function initializeServer(networkname_){
     })
 };
 
+function selectMocker() {
+  $.get(BACKEND_URL + "/networks/" + networkname + "/mock"). then(
+    function(d) {
+      console.log("Successfully retrieved mocker list");
+      console.log(d);
+      mockerlist = d;
+      showSelectDialog();
+    },
+    function(e,s,err) {
+      $("#error-messages").show();
+      $("#error-reason").text("Failed to retrieve mocker list.");
+      console.log(e);
+    });
+}
+
+function showSelectDialog() {
+  putOverlay();
+  if (mockerlist_generated == true) {
+    $("#select-mocker").show("slow");
+  } else {
+    var dframe = $(document.createElement('div'));
+    dframe.attr("class","dialogframe");
+    var table = $(document.createElement('table'));
+    table.attr("class","objectlist");
+    $.each(mockerlist, function(k,v) {
+      var tr = $(document.createElement('tr'));
+      tr.attr("class","selectelement");
+      var td = $(document.createElement('td'));
+      td.attr("id",k);
+      td.click(function() { selectMockerBackend($(this).attr("id"));});
+      td.append(v); 
+      tr.append(td);
+      table.append(tr);
+    }) 
+    dframe.append(table);
+    var dialog = $("#select-mocker");
+    dialog.append(dframe);
+    dialog.css({
+          'margin-left': -dialog.outerWidth() / 2 + 'px',
+          'margin-top':  -dialog.outerHeight() / 2 + 'px'
+    });
+    $('#close').css({
+          'left': dialog.position().left + dialog.outerWidth()/2 - 20 + 'px',
+          'top':  dialog.position().top  - dialog.outerHeight()/2 -20 + 'px'
+    });
+    dialog.show();
+    mockerlist_generated = true;
+  }
+}
+
+function putOverlay() {
+  $('#Overlay').show();
+}
+
+function funcClose() {
+  $("#Overlay").hide("slow");
+  $(".ui-dialog").hide("slow");
+}
+
+
 //Mocker is currently not used for this visualization
 function initializeMocker(networkname_) {
   $.post(BACKEND_URL + "/" + networkname_ + "/mockevents/").then(
@@ -137,6 +221,7 @@ function getGraphNodes(arr) {
       .map(function(i,e){
         return {
           id: e.data.id,
+          label: nodeShortLabel(e.data.id),
           control: e.control,
           visible: true,
           group: 1
@@ -149,6 +234,7 @@ function getGraphLinks(arr) {
       .map(function(i,e){
         return {
           id: e.data.id,
+          label: nodeShortLabel(e.data.id),
           control: e.control,
           source: e.data.source,
           target: e.data.target,
@@ -192,10 +278,10 @@ function updateVisualisationWithClass(graph) {
 
   visualisation.sidebar.updateSidebarCounts(newNodes, newLinks, removeNodes, removeLinks); 
 
-  var triggerMsgs = $(graph.add)
-      .filter(function(i,e){return e.group === 'msgs'})
+  var triggerMsgs = $(graph.message)
       .map(function(i,e){
         return {
+          id: e.data.id,
           source: e.data.source,
           target: e.data.target,
           group: 1,
@@ -208,3 +294,6 @@ function updateVisualisationWithClass(graph) {
 };
 
 
+function showMenu() {
+  $('menu').show();
+}
