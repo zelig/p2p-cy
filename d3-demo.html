@@ -65,6 +65,9 @@
             -->
             <div class="inline elapsed">Time elapsed: <span id="time-elapsed">00:00:00</span></div>
           </div>
+          <div class="label">
+            Selected simulation: <div id="selected-simulation"></div>
+          </div>
           <div class="actions">
             <input id="timemachine" style="display:none" type="range">
           </div>
@@ -113,10 +116,6 @@
             </div>
           </div>
         </div>
-        <div id="output-window">
-          <label><input type="checkbox" checked="checked" name="showlogs" value="true">Enable log console</label>
-          <div id="log-console"> </div>
-        </div>
       </div>
       <div id="error-messages">
         Oooops - error connecting to backend!
@@ -134,6 +133,10 @@
       <div id="close" class="close" onclick="funcClose(this);">X</div>
     </div>
     <div id="select-mocker" name="select-mocker" class="ui-dialog">
+    </div>
+    <div id="output-window">
+      <label><input type="checkbox" checked="checked" id="showlogs" name="showlogs" value="true">Enable log console</label>
+      <div id="log-console"> </div>
     </div>
   </body>
 </html>

@@ -38,10 +38,6 @@ $(document).ready(function() {
   $('#play').prop("disabled",true);
 
   //click handlers
-  $('#output-window').on('click', function() {
-    $('#log-console').toggle();
-  });
-
   $('#power').on('click',function(){ 
     initializeServer(networkname); 
     $('#play').prop("disabled",false);
@@ -86,14 +82,92 @@ $(document).ready(function() {
               break;
     }
   });
+
+
+  $('#output-window').on('click',function(){ 
+    if ($('#showlogs').is(":checked") ) {
+      $('#output-window').toggleClass("closepane"); 
+    }
+  });
+
+  $('#selected-simulation').text(selectedSim);
 });
 
 function setupEventStream() {
-  eventSource = new EventSource(BACKEND_URL + '/networks/' + networkname);
+  eventSource = new EventSource(BACKEND_URL + '/networks/' + networkname + "/events");
 
-  eventSource.addEventListener("simupdate", function(e) {
-    updateVisualisationWithClass(JSON.parse(e.data));
+
+  eventSource.addEventListener("network", function(e) {
+    var event = JSON.parse(e.data);
+
+    var graph = {
+      add:     [],
+      remove:  [],
+      message: []
+    };
+
+    switch(event.type) {
+
+      case "node":
+        if (event.control) {
+          return;
+        }
+
+        var el = {
+          group: "nodes",
+          data: {
+            id: event.node.config.id,
+            up: event.node.up
+          },
+          control: event.control
+        };
+
+        if (event.node.up) {
+          graph.add.push(el);
+        } else {
+          graph.remove.push(el);
+        }
+
+        break;
+
+      case "conn":
+        var el = {
+          group: "edges",
+          data: {
+            id:     event.conn.one + "-" + event.conn.other,
+            source: event.conn.one,
+            target: event.conn.other,
+            up:     event.conn.up
+          },
+          control: event.control
+        };
+
+        if (event.conn.up) {
+          graph.add.push(el);
+        } else {
+          graph.remove.push(el);
+        }
+
+        break;
+
+      case "msg":
+        graph.message.push({
+          group: "msgs",
+          data: {
+            id:     event.msg.one + "-" + event.msg.other,
+            source: event.msg.one,
+            target: event.msg.other,
+            up:     event.msg.up
+          },
+          control: event.control
+        });
+
+        break;
+
+    }
+    updateVisualisationWithClass(graph);
   });
+
 
   eventSource.onerror = function() {
     $("#error-messages").show();
@@ -107,8 +181,8 @@ function setupEventStream() {
 
 function selectMockerBackend(id) {
   selectedSim = id;
+  $('#selected-simulation').text(selectedSim);
   funcClose();
-  startViz();
 }
 
 function startViz(){
@@ -265,6 +339,9 @@ function updateVisualisationWithClass(graph) {
       $("#log-console").append(str);
     }
   } 
+
+  var elem = document.getElementById('output-window');
+  elem.scrollTop = elem.scrollHeight;
 
   $('#node-kademlia-table').addClass("stale");
   //new nodes

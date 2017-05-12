@@ -286,6 +286,7 @@ input[type=range]:focus::-ms-fill-upper {
   width: 100%;
   display: none;
   text-align: center;
+  padding-top: 6px;
 }
 
 #status-messages {
@@ -293,6 +294,7 @@ input[type=range]:focus::-ms-fill-upper {
   width: 100%;
   display: none;
   text-align: center;
+  padding-top: 6px;
 }
 
 .kademlia-info,
@@ -318,13 +320,21 @@ input[type=range]:focus::-ms-fill-upper {
 }
 
 #output-window {
-  position: absolute;
-  width: inherit;
-  height: 200px;
+  width: 100%;
+  top: 98vh; 
   bottom: 0;
+  overflow: hidden;
+  transition: all 1s;
+  position: absolute;
   font-size: 10px;
-  overflow: auto;
-  float: left;
+  background-color: #333;
+  opacity: 0.8;
+  cursor: pointer;
+  color: white;
+}
+
+#output-window.closepane {
+  top: 80vh;
 }
 
 .visible {
@@ -413,4 +423,18 @@ tr.selectelement td {
 
 .highlight {
     animation: highlight 2s;
+}
+
+.label {
+  font-size: 0.8em;
+  display: inline-block;
+}
+
+#selected-simulation {
+  font-style: oblique;
+  display: inline-block;
+}
+
+line:hover {
+  cursor: crosshair;
 }
