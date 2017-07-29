@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+	<title>p2p Network Connectivity Graph</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1, maximum-scale=1">
+
+    <script src="js/lib/jquery-2.2.4.min.js"></script>
+    <script src="js/lib/d3.v4.min.js"></script>    
+    <script src="js/visuals.js"></script>
+    <script src="js/network.js"></script>
+    
+    <script>
+    $(document).ready(function() {
+			console.log("loaded");
+      $('#start-visualisation').on('click',function(){ 
+        initializeServer("0"); 
+      });
+	  });
+    </script>
+    
+    <link rel="stylesheet" href="d3.css">
+    
+  </head>
+  <body>
+    <div class="wrapper">
+      <h1>p2p Network Connectivity Graph</h1>
+      <div id="sidebar" class=sidebar>
+        <div id="selected-node">
+          <div class="actions">
+            <button class="inline" id="start-visualisation">Start New Visualisation</button>
+            <div class="inline elapsed">Time elapsed: <span id="time-elapsed"></span></div>
+          </div>
+            <div class="counts">
+              <h3>Nodes</h1>
+              <table class="node-counts counts-table">
+                <thead>
+                  <td>UP</td>
+                  <td>ADD</td>
+                  <td>REMOVE</td>
+                </thead>
+                <tbody>
+                  <td id="nodes-up-count"></td>
+                  <td id="nodes-add-count"></td>
+                  <td id="nodes-remove-count"></td>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="counts clear">
+              <h3>Connections</h1>
+              <table class="edge-counts counts-table">
+                <thead>
+                  <td>UP</td>
+                  <td>ADD</td>
+                  <td>REMOVE</td>
+                </thead>
+                <tbody>
+                  <td id="edges-up-count"></td>
+                  <td id="edges-add-count"></td>
+                  <td id="edges-remove-count"></td>
+                </tbody>
+              </table>
+            </div>
+
+          <div class="node-selected">
+            <div class="node-info">
+              <h3>Node Information</h1>
+              <ul>
+                <li> ID: <span class="node-id"></span> </li>
+                <li> Database Size: <span class="node-balance"></span> </li>
+              </ul>            
+
+              <pre id="kamemlia-text-table" class="fixed-width"> ___  __    ________  ________     
+|\  \|\  \ |\   __  \|\   ___ \    
+\ \  \/  /|\ \  \|\  \ \  \_|\ \   
+ \ \   ___  \ \   __  \ \  \ \\ \  
+  \ \  \\ \  \ \  \ \  \ \  \_\\ \ 
+   \ \__\\ \__\ \__\ \__\ \_______\
+    \|__| \|__|\|__|\|__|\|_______|
+                                   
+                                   
+                                   
+</pre>
+
+<!--               <table class="node-kademlia-table">
+                <thead>
+                  <td>Id</td>
+                  <td>IP:Port</td>
+                  <td>Distance</td>
+                </thead>
+                <tbody>
+                  
+                </tbody>
+              </table> -->
+            </div>
+          </div>
+        </div>
+      </div>
+      <svg id="network-visualisation" width="780" height="780"></svg>
+    </div>
+  </body>
+</html>
+
+
